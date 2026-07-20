@@ -63,7 +63,25 @@ app.get('/ad/:id', async (req, res) => {
             const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
             const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
-            return res.redirect(302, intentUrl);
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(`
+                <!DOCTYPE html>
+                <html lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>جاري التحويل...</title>
+                </head>
+                <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
+                    <h2>جاري تحويلك إلى التطبيق...</h2>
+                    <script>
+                        window.location.href = "${intentUrl}";
+                        setTimeout(function() {
+                            window.location.href = "${playStoreUrl}";
+                        }, 1500);
+                    </script>
+                </body>
+                </html>
+            `);
         }
         return res.redirect(302, redirectUrl);
     }
@@ -153,7 +171,25 @@ app.get('/category/:id', async (req, res) => {
             const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
             const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
-            return res.redirect(302, intentUrl);
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(`
+                <!DOCTYPE html>
+                <html lang="ar">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>جاري التحويل...</title>
+                </head>
+                <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
+                    <h2>جاري تحويلك إلى التطبيق...</h2>
+                    <script>
+                        window.location.href = "${intentUrl}";
+                        setTimeout(function() {
+                            window.location.href = "${playStoreUrl}";
+                        }, 1500);
+                    </script>
+                </body>
+                </html>
+            `);
         }
         return res.redirect(302, redirectUrl);
     }
