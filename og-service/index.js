@@ -62,6 +62,7 @@ app.get('/ad/:id', async (req, res) => {
         if (userAgent.toLowerCase().includes('android')) {
             const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
+            const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             const imageUrl = `${SHARE_DOMAIN}/image/${id}.jpg`;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.send(`
@@ -198,6 +199,7 @@ app.get('/category/:id', async (req, res) => {
         if (userAgent.toLowerCase().includes('android')) {
             const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
+            const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             const imageUrl = `${SHARE_DOMAIN}/image/category/${id}.jpg`;
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.send(`
