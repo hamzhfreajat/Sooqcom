@@ -5,10 +5,16 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 
 // Fallback redirect: If a user is sent here from og-service with app_fallback=1,
-// it means they clicked a Facebook link and the Android OS did NOT intercept it
-// (which proves they don't have the app installed).
+// it means they clicked a Facebook link and the OS did NOT intercept it.
 if (window.location.search.includes('app_fallback=1')) {
-  window.location.replace('https://play.google.com/store/apps/details?id=com.sooqcom.app');
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+    // iOS Device -> Redirect to Apple App Store
+    window.location.replace('https://apps.apple.com/app/idYOUR_APPLE_APP_ID'); // NOTE: Update this ID!
+  } else {
+    // Android/Other -> Redirect to Google Play Store
+    window.location.replace('https://play.google.com/store/apps/details?id=com.sooqcom.app');
+  }
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
