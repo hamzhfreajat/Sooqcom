@@ -64,16 +64,29 @@ app.get('/ad/:id', async (req, res) => {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
             const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             const imageUrl = `${SHARE_DOMAIN}/image/${id}.jpg`;
+            // Use a Javascript-based automatic redirect. It will try the intentUrl first.
+            // If the app doesn't open within 1.5 seconds, it redirects to the Play Store.
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            // Facebook/Instagram WebViews block automatic intent URLs.
-            // Since the user requested to bypass the Bottom Sheet, we force them straight to the Play Store.
-            if (userAgent.includes('FB_IAB') || userAgent.includes('FBAV') || userAgent.includes('Instagram')) {
-                return res.redirect(302, playStoreUrl);
-            }
-
-            // Normal Android browsers (like Chrome) support automatic intent URLs.
-            // This will automatically open the App if installed, or fallback to the Play Store if not.
-            return res.redirect(302, intentUrl);
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>جاري التحويل...</title>
+                    <script>
+                        // Try to open the App using the intent
+                        window.location.href = "${intentUrl}";
+                        
+                        // If it fails or the app is not installed, redirect to Play Store after 1.5 seconds
+                        setTimeout(function() {
+                            window.location.href = "${playStoreUrl}";
+                        }, 1500);
+                    </script>
+                </head>
+                <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+                    <h2>جاري التحويل إلى التطبيق...</h2>
+                </body>
+                </html>
+            `);
         }
         return res.redirect(302, redirectUrl);
     }
@@ -164,16 +177,29 @@ app.get('/category/:id', async (req, res) => {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
             const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             const imageUrl = `${SHARE_DOMAIN}/image/category/${id}.jpg`;
+            // Use a Javascript-based automatic redirect. It will try the intentUrl first.
+            // If the app doesn't open within 1.5 seconds, it redirects to the Play Store.
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            // Facebook/Instagram WebViews block automatic intent URLs.
-            // Since the user requested to bypass the Bottom Sheet, we force them straight to the Play Store.
-            if (userAgent.includes('FB_IAB') || userAgent.includes('FBAV') || userAgent.includes('Instagram')) {
-                return res.redirect(302, playStoreUrl);
-            }
-
-            // Normal Android browsers (like Chrome) support automatic intent URLs.
-            // This will automatically open the App if installed, or fallback to the Play Store if not.
-            return res.redirect(302, intentUrl);
+            return res.send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>جاري التحويل...</title>
+                    <script>
+                        // Try to open the App using the intent
+                        window.location.href = "${intentUrl}";
+                        
+                        // If it fails or the app is not installed, redirect to Play Store after 1.5 seconds
+                        setTimeout(function() {
+                            window.location.href = "${playStoreUrl}";
+                        }, 1500);
+                    </script>
+                </head>
+                <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+                    <h2>جاري التحويل إلى التطبيق...</h2>
+                </body>
+                </html>
+            `);
         }
         return res.redirect(302, redirectUrl);
     }
