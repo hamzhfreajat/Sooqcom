@@ -73,11 +73,12 @@ app.get('/ad/:id', async (req, res) => {
                 </head>
                 <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
                     <h2>جاري تحويلك إلى التطبيق...</h2>
+                    <iframe id="app-iframe" style="display:none;"></iframe>
                     <script>
-                        window.location.href = "${intentUrl}";
+                        document.getElementById('app-iframe').src = "${intentUrl}";
                         setTimeout(function() {
                             window.location.href = "${playStoreUrl}";
-                        }, 1500);
+                        }, 2000);
                     </script>
                 </body>
                 </html>
@@ -181,11 +182,12 @@ app.get('/category/:id', async (req, res) => {
                 </head>
                 <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
                     <h2>جاري تحويلك إلى التطبيق...</h2>
+                    <iframe id="app-iframe" style="display:none;"></iframe>
                     <script>
-                        window.location.href = "${intentUrl}";
+                        document.getElementById('app-iframe').src = "${intentUrl}";
                         setTimeout(function() {
                             window.location.href = "${playStoreUrl}";
-                        }, 1500);
+                        }, 2000);
                     </script>
                 </body>
                 </html>
