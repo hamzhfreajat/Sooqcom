@@ -27,6 +27,14 @@
     <title>سوقكم SOOQCOM</title>
   </head>
   <body>
+    <script>
+      // Fallback redirect: If a user is sent here from og-service with app_fallback=1,
+      // it means they clicked a Facebook link and the Android OS did NOT intercept it
+      // (which proves they don't have the app installed).
+      if (window.location.search.includes('app_fallback=1')) {
+        window.location.href = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
+      }
+    </script>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <!--
