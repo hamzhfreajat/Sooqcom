@@ -69,17 +69,16 @@ app.get('/ad/:id', async (req, res) => {
                 <html lang="ar">
                 <head>
                     <meta charset="UTF-8">
-                    <title>جاري التحويل...</title>
+                    <title>تطبيق سوقكم</title>
                 </head>
-                <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
-                    <h2>جاري تحويلك إلى التطبيق...</h2>
-                    <iframe id="app-iframe" style="display:none;"></iframe>
-                    <script>
-                        document.getElementById('app-iframe').src = "${intentUrl}";
-                        setTimeout(function() {
-                            window.location.href = "${playStoreUrl}";
-                        }, 2000);
-                    </script>
+                <body style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;margin:0;padding:20px;text-align:center;">
+                    <img src="https://sooq-com.com/assets/favicon/favicon-180.png" alt="Sooqcom" style="width:100px;height:100px;border-radius:20px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+                    <h2 style="color:#333;margin-bottom:10px;">تطبيق سوقكم</h2>
+                    <p style="color:#666;margin-bottom:30px;font-size:16px;">لضمان أفضل تجربة، يرجى المتابعة من التطبيق</p>
+                    
+                    <a href="${intentUrl}" style="display:block;width:100%;max-width:300px;padding:15px;background:#00B2FF;color:white;text-decoration:none;border-radius:10px;font-size:18px;font-weight:bold;margin-bottom:15px;">فتح التطبيق</a>
+                    
+                    <a href="${playStoreUrl}" style="display:block;width:100%;max-width:300px;padding:15px;background:#fff;color:#00B2FF;border:2px solid #00B2FF;text-decoration:none;border-radius:10px;font-size:18px;font-weight:bold;">تحميل التطبيق</a>
                 </body>
                 </html>
             `);
@@ -178,17 +177,16 @@ app.get('/category/:id', async (req, res) => {
                 <html lang="ar">
                 <head>
                     <meta charset="UTF-8">
-                    <title>جاري التحويل...</title>
+                    <title>تطبيق سوقكم</title>
                 </head>
-                <body style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;">
-                    <h2>جاري تحويلك إلى التطبيق...</h2>
-                    <iframe id="app-iframe" style="display:none;"></iframe>
-                    <script>
-                        document.getElementById('app-iframe').src = "${intentUrl}";
-                        setTimeout(function() {
-                            window.location.href = "${playStoreUrl}";
-                        }, 2000);
-                    </script>
+                <body style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;background:#f0f2f5;margin:0;padding:20px;text-align:center;">
+                    <img src="https://sooq-com.com/assets/favicon/favicon-180.png" alt="Sooqcom" style="width:100px;height:100px;border-radius:20px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1);">
+                    <h2 style="color:#333;margin-bottom:10px;">تطبيق سوقكم</h2>
+                    <p style="color:#666;margin-bottom:30px;font-size:16px;">لضمان أفضل تجربة، يرجى المتابعة من التطبيق</p>
+                    
+                    <a href="${intentUrl}" style="display:block;width:100%;max-width:300px;padding:15px;background:#00B2FF;color:white;text-decoration:none;border-radius:10px;font-size:18px;font-weight:bold;margin-bottom:15px;">فتح التطبيق</a>
+                    
+                    <a href="${playStoreUrl}" style="display:block;width:100%;max-width:300px;padding:15px;background:#fff;color:#00B2FF;border:2px solid #00B2FF;text-decoration:none;border-radius:10px;font-size:18px;font-weight:bold;">تحميل التطبيق</a>
                 </body>
                 </html>
             `);
