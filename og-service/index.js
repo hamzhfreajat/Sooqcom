@@ -60,13 +60,29 @@ app.get('/ad/:id', async (req, res) => {
     
     // If it's a real user, instantly redirect them!
     if (!isBot(userAgent)) {
-        // Aggressively break out of Messenger/Facebook WebView on Android
-        if (userAgent.toLowerCase().includes('android')) {
-            // We redirect to the standard HTTPS web URL with a special flag.
-            // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
-            // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
-            return res.redirect(302, fallbackUrl);
+        // Facebook/Messenger WebView on Android does NOT honor Android App Links (autoVerify).
+        // It loads URLs internally instead of asking the OS to handle them.
+        // The ONLY reliable way to open our app from Facebook's WebView is the intent:// URI scheme.
+        // intent:// has a built-in S.browser_fallback_url for when the app is NOT installed.
+        if (userAgent.toLowerCase().includes('android') && 
+            (userAgent.toLowerCase().includes('fb') || userAgent.toLowerCase().includes('messenger') || userAgent.toLowerCase().includes('instagram'))) {
+            const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
+            const deepLinkPath = `ad/${id}${queryString}`;
+            const intentUrl = `intent://${deepLinkPath}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
+            
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>جاري فتح التطبيق...</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}</style></head>
+<body><div class="container">
+<div class="logo">S</div>
+<div class="spinner"></div>
+<h1>جاري فتح سوقكم...</h1>
+<p>سيتم فتح الإعلان في التطبيق</p>
+</div>
+<script>window.location.href="${intentUrl}";</script></body></html>`;
+            
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
         }
         return res.redirect(302, redirectUrl);
     }
@@ -163,13 +179,27 @@ app.get('/category/:id', async (req, res) => {
     
     // If it's a real user, instantly redirect them!
     if (!isBot(userAgent)) {
-        // Aggressively break out of Messenger WebView on Android
-        if (userAgent.toLowerCase().includes('android')) {
-            // We redirect to the standard HTTPS web URL with a special flag.
-            // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
-            // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
-            return res.redirect(302, fallbackUrl);
+        // Facebook/Messenger WebView on Android does NOT honor Android App Links (autoVerify).
+        // The ONLY reliable way to open our app from Facebook's WebView is the intent:// URI scheme.
+        if (userAgent.toLowerCase().includes('android') && 
+            (userAgent.toLowerCase().includes('fb') || userAgent.toLowerCase().includes('messenger') || userAgent.toLowerCase().includes('instagram'))) {
+            const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
+            const deepLinkPath = `category/${id}${queryString}`;
+            const intentUrl = `intent://${deepLinkPath}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
+            
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>جاري فتح التطبيق...</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}</style></head>
+<body><div class="container">
+<div class="logo">S</div>
+<div class="spinner"></div>
+<h1>جاري فتح سوقكم...</h1>
+<p>سيتم فتح القسم في التطبيق</p>
+</div>
+<script>window.location.href="${intentUrl}";</script></body></html>`;
+            
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
         }
         return res.redirect(302, redirectUrl);
     }
