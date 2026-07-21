@@ -142,6 +142,12 @@ app.get('/ad/:id', async (req, res) => {
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
     <meta property="og:image" content="${imageUrl}">
+    
+    <!-- Native Facebook App Links -->
+    <meta property="al:android:url" content="sooqcom://ad/${id}${queryString}">
+    <meta property="al:android:package" content="com.sooqcom.app">
+    <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
 </html>
@@ -234,6 +240,12 @@ app.get('/category/:id', async (req, res) => {
     <meta property="og:title" content="${title}">
     <meta property="og:description" content="${description}">
     <meta property="og:image" content="${imageUrl}">
+    
+    <!-- Native Facebook App Links -->
+    <meta property="al:android:url" content="sooqcom://category/${id}${queryString}">
+    <meta property="al:android:package" content="com.sooqcom.app">
+    <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
 </html>
