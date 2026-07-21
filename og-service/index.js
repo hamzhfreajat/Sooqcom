@@ -51,17 +51,23 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
 });
 
 // iOS Universal Links verification
-app.get('/.well-known/apple-app-site-association', (req, res) => {
+app.get(['/.well-known/apple-app-site-association', '/apple-app-site-association'], (req, res) => {
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(JSON.stringify({
         "applinks": {
-            "apps": [],
             "details": [
                 {
-                    "appID": "6V3SN6YU5G.com.sooqcom.app",
-                    "paths": ["/ad/*", "/category/*"]
+                    "appIDs": ["6V3SN6YU5G.com.sooqcom.app"],
+                    "components": [
+                        { "/": "/ad/*", "comment": "Ad deep links" },
+                        { "/": "/category/*", "comment": "Category deep links" }
+                    ]
                 }
             ]
+        },
+        "webcredentials": {
+            "apps": ["6V3SN6YU5G.com.sooqcom.app"]
         }
     }));
 });
