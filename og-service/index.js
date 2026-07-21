@@ -54,7 +54,9 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
 app.get('/ad/:id', async (req, res) => {
     const { id } = req.params;
     const userAgent = req.headers['user-agent'];
-    const redirectUrl = `${MAIN_SITE}/ad/${id}`;
+    const hasQuery = req.url.includes('?');
+    const queryString = hasQuery ? req.url.substring(req.url.indexOf('?')) : '';
+    const redirectUrl = `${MAIN_SITE}/ad/${id}${queryString}`;
     
     // If it's a real user, instantly redirect them!
     if (!isBot(userAgent)) {
@@ -68,7 +70,7 @@ app.get('/ad/:id', async (req, res) => {
             // We redirect to the standard HTTPS web URL with a special flag.
             // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
             // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (redirectUrl.includes('?') ? '&' : '?') + 'app_fallback=1';
+            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
             return res.redirect(302, fallbackUrl);
         }
         return res.redirect(302, redirectUrl);
@@ -89,7 +91,6 @@ app.get('/ad/:id', async (req, res) => {
         const description = ad.description || 'شاهد تفاصيل هذا الإعلان على موقع سوقكم';
         
         const imageUrl = `${SHARE_DOMAIN}/image/${id}.jpg`;
-        const redirectUrl = `${MAIN_SITE}/ad/${id}`;
 
         const html = `
 <!DOCTYPE html>
@@ -111,7 +112,7 @@ app.get('/ad/:id', async (req, res) => {
     <meta property="twitter:image" content="${imageUrl}">
     
     <!-- Native Facebook App Links -->
-    <meta property="al:android:url" content="sooqcom://ad/${id}">
+    <meta property="al:android:url" content="sooqcom://ad/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
@@ -155,8 +156,9 @@ app.get('/category/:id', async (req, res) => {
     const userAgent = req.headers['user-agent'];
     
     // We get query params so we can pass them along (e.g. filters)
-    const queryString = req.url.substring(req.url.indexOf('?'));
-    const redirectUrl = `${MAIN_SITE}/category/${id}${queryString !== req.url && queryString !== '-1' ? queryString : ''}`;
+    const hasQuery = req.url.includes('?');
+    const queryString = hasQuery ? req.url.substring(req.url.indexOf('?')) : '';
+    const redirectUrl = `${MAIN_SITE}/category/${id}${queryString}`;
     
     // If it's a real user, instantly redirect them!
     if (!isBot(userAgent)) {
@@ -170,7 +172,7 @@ app.get('/category/:id', async (req, res) => {
             // We redirect to the standard HTTPS web URL with a special flag.
             // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
             // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (redirectUrl.includes('?') ? '&' : '?') + 'app_fallback=1';
+            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
             return res.redirect(302, fallbackUrl);
         }
         return res.redirect(302, redirectUrl);
@@ -203,7 +205,7 @@ app.get('/category/:id', async (req, res) => {
     <meta property="og:image:height" content="630">
     
     <!-- Native Facebook App Links -->
-    <meta property="al:android:url" content="sooqcom://category/${id}">
+    <meta property="al:android:url" content="sooqcom://category/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
