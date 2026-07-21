@@ -60,18 +60,37 @@ app.get('/ad/:id', async (req, res) => {
     
     // If it's a real user, instantly redirect them!
     if (!isBot(userAgent)) {
-        // Aggressively break out of Messenger WebView on Android
+        // Aggressively break out of Messenger/Facebook WebView on Android
         if (userAgent.toLowerCase().includes('android')) {
-            const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
-            const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
-            const imageUrl = `${SHARE_DOMAIN}/image/${id}.jpg`;
-            // Since Facebook completely blocks intent:// URLs, we rely on Android Verified App Links.
-            // We redirect to the standard HTTPS web URL with a special flag.
-            // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
-            // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
-            return res.redirect(302, fallbackUrl);
+            // Use Android Intent URL to force opening the app, or fallback to Play Store
+            const intentUrl = `intent://ad/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;end`;
+            
+            const jsRedirectHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>جاري التحويل للتطبيق...</title>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif; direction: rtl;">
+        <h3>جاري فتح الإعلان في تطبيق سوقكم...</h3>
+        <p>إذا لم يفتح التطبيق تلقائياً، <a href="${playStoreUrl}">اضغط هنا لتحميله</a>.</p>
+    </div>
+    <script>
+        // Attempt to open the app natively using Intent URI
+        window.location.href = "${intentUrl}";
+        
+        // If it fails (app not installed), fallback to Play Store after 2.5 seconds
+        setTimeout(function() {
+            window.location.href = "${playStoreUrl}";
+        }, 2500);
+    </script>
+</body>
+</html>`;
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(jsRedirectHtml);
         }
         return res.redirect(302, redirectUrl);
     }
@@ -170,16 +189,35 @@ app.get('/category/:id', async (req, res) => {
     if (!isBot(userAgent)) {
         // Aggressively break out of Messenger WebView on Android
         if (userAgent.toLowerCase().includes('android')) {
-            const domainAndPath = redirectUrl.replace(/^https?:\/\//, '');
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
-            const intentUrl = `intent://${domainAndPath}#Intent;scheme=https;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
-            const imageUrl = `${SHARE_DOMAIN}/image/category/${id}.jpg`;
-            // Since Facebook completely blocks intent:// URLs, we rely on Android Verified App Links.
-            // We redirect to the standard HTTPS web URL with a special flag.
-            // If the app is installed, Android OS intercepts this HTTPS URL and opens the app natively.
-            // If the app is NOT installed, Facebook WebView loads the React SPA, which reads the flag and redirects to the Play Store.
-            const fallbackUrl = redirectUrl + (hasQuery ? '&' : '?') + 'app_fallback=1';
-            return res.redirect(302, fallbackUrl);
+            // Use Android Intent URL to force opening the app, or fallback to Play Store
+            const intentUrl = `intent://category/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;end`;
+            
+            const jsRedirectHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>جاري التحويل للتطبيق...</title>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; font-family: sans-serif; direction: rtl;">
+        <h3>جاري فتح القسم في تطبيق سوقكم...</h3>
+        <p>إذا لم يفتح التطبيق تلقائياً، <a href="${playStoreUrl}">اضغط هنا لتحميله</a>.</p>
+    </div>
+    <script>
+        // Attempt to open the app natively using Intent URI
+        window.location.href = "${intentUrl}";
+        
+        // If it fails (app not installed), fallback to Play Store after 2.5 seconds
+        setTimeout(function() {
+            window.location.href = "${playStoreUrl}";
+        }, 2500);
+    </script>
+</body>
+</html>`;
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(jsRedirectHtml);
         }
         return res.redirect(302, redirectUrl);
     }
