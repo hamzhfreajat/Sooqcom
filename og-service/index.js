@@ -29,8 +29,10 @@ function isBot(userAgent) {
 }
 
 // ==========================================
-// 0. DEEP LINK VERIFICATION (Android App Links)
+// 0. DEEP LINK VERIFICATION
 // ==========================================
+
+// Android App Links verification
 app.get('/.well-known/assetlinks.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(`[
@@ -46,6 +48,22 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
     }
   }
 ]`);
+});
+
+// iOS Universal Links verification
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+        "applinks": {
+            "apps": [],
+            "details": [
+                {
+                    "appID": "6V3SN6YU5G.com.sooqcom.app",
+                    "paths": ["/ad/*", "/category/*"]
+                }
+            ]
+        }
+    }));
 });
 
 // ==========================================
@@ -85,6 +103,33 @@ try{var f=document.createElement('iframe');f.style.display='none';f.src='${custo
 // Method 2: Try intent:// via window.location (works in Chrome Custom Tabs)
 setTimeout(function(){try{window.location.href='${intentUrl}'}catch(e){}},300);
 // Method 3: Show manual link after 3 seconds if nothing worked
+setTimeout(function(){document.getElementById('fallback').style.display='block';document.querySelector('.spinner').style.display='none'},3000);
+</script></body></html>`;
+            
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
+        }
+        // iOS Facebook/Messenger/Instagram WebView
+        if (userAgent.toLowerCase().includes('iphone') && 
+            (userAgent.toLowerCase().includes('fb') || userAgent.toLowerCase().includes('messenger') || userAgent.toLowerCase().includes('instagram'))) {
+            const appStoreUrl = 'https://apps.apple.com/app/sooqcom/id6740043498';
+            const deepLinkPath = `ad/${id}${queryString}`;
+            const customSchemeUrl = `sooqcom://${deepLinkPath}`;
+            
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>جاري فتح التطبيق...</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}#fallback{display:none;margin-top:2rem}#fallback a{color:#00B2FF;text-decoration:none;font-size:0.85rem}</style></head>
+<body><div class="container">
+<div class="logo">S</div>
+<div class="spinner"></div>
+<h1>جاري فتح سوقكم...</h1>
+<p>سيتم فتح الإعلان في التطبيق</p>
+<div id="fallback"><a href="${appStoreUrl}">اضغط هنا إذا لم يفتح التطبيق تلقائياً</a></div>
+</div>
+<script>
+// Try custom scheme on iOS
+window.location.href='${customSchemeUrl}';
+// Show fallback after 3 seconds
 setTimeout(function(){document.getElementById('fallback').style.display='block';document.querySelector('.spinner').style.display='none'},3000);
 </script></body></html>`;
             
@@ -133,6 +178,9 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
     <meta property="al:android:url" content="sooqcom://ad/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:ios:url" content="sooqcom://ad/${id}${queryString}">
+    <meta property="al:ios:app_store_id" content="6740043498">
+    <meta property="al:ios:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
@@ -165,6 +213,9 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
     <meta property="al:android:url" content="sooqcom://ad/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:ios:url" content="sooqcom://ad/${id}${queryString}">
+    <meta property="al:ios:app_store_id" content="6740043498">
+    <meta property="al:ios:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
@@ -217,6 +268,33 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             return res.send(html);
         }
+        // iOS Facebook/Messenger/Instagram WebView
+        if (userAgent.toLowerCase().includes('iphone') && 
+            (userAgent.toLowerCase().includes('fb') || userAgent.toLowerCase().includes('messenger') || userAgent.toLowerCase().includes('instagram'))) {
+            const appStoreUrl = 'https://apps.apple.com/app/sooqcom/id6740043498';
+            const deepLinkPath = `category/${id}${queryString}`;
+            const customSchemeUrl = `sooqcom://${deepLinkPath}`;
+            
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>جاري فتح التطبيق...</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}#fallback{display:none;margin-top:2rem}#fallback a{color:#00B2FF;text-decoration:none;font-size:0.85rem}</style></head>
+<body><div class="container">
+<div class="logo">S</div>
+<div class="spinner"></div>
+<h1>جاري فتح سوقكم...</h1>
+<p>سيتم فتح القسم في التطبيق</p>
+<div id="fallback"><a href="${appStoreUrl}">اضغط هنا إذا لم يفتح التطبيق تلقائياً</a></div>
+</div>
+<script>
+// Try custom scheme on iOS
+window.location.href='${customSchemeUrl}';
+// Show fallback after 3 seconds
+setTimeout(function(){document.getElementById('fallback').style.display='block';document.querySelector('.spinner').style.display='none'},3000);
+</script></body></html>`;
+            
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
+        }
         return res.redirect(302, redirectUrl);
     }
     
@@ -250,6 +328,9 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
     <meta property="al:android:url" content="sooqcom://category/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:ios:url" content="sooqcom://category/${id}${queryString}">
+    <meta property="al:ios:app_store_id" content="6740043498">
+    <meta property="al:ios:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
@@ -281,6 +362,9 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
     <meta property="al:android:url" content="sooqcom://category/${id}${queryString}">
     <meta property="al:android:package" content="com.sooqcom.app">
     <meta property="al:android:app_name" content="Sooqcom">
+    <meta property="al:ios:url" content="sooqcom://category/${id}${queryString}">
+    <meta property="al:ios:app_store_id" content="6740043498">
+    <meta property="al:ios:app_name" content="Sooqcom">
     <meta property="al:web:should_fallback" content="false">
 </head>
 <body></body>
