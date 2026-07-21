@@ -63,29 +63,39 @@ app.get('/ad/:id', async (req, res) => {
         // Aggressively break out of Messenger/Facebook WebView on Android
         if (userAgent.toLowerCase().includes('android')) {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
-            // Use Android Intent URL to force opening the app, or fallback to Play Store
-            const intentUrl = `intent://ad/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;end`;
+            // Use Android Intent URL to force opening the app natively.
+            // S.browser_fallback_url natively handles the fallback to Play Store if the app isn't installed.
+            const intentUrl = `intent://ad/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             
             const jsRedirectHtml = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>جاري التحويل للتطبيق...</title>
+    <title>تطبيق سوقكم</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { text-align: center; font-family: sans-serif; direction: rtl; padding: 20px; background: #f0f4f8; margin: 0; }
+        .card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 15vh; }
+        .btn { display: inline-block; padding: 14px 24px; background: #0056ff; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin-top: 20px; width: 85%; max-width: 300px; }
+        .btn-outline { background: white; color: #0056ff; border: 2px solid #0056ff; margin-top: 15px; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; line-height: 1.5; margin-bottom: 5px; }
+    </style>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 50px; font-family: sans-serif; direction: rtl;">
-        <h3>جاري فتح الإعلان في تطبيق سوقكم...</h3>
-        <p>إذا لم يفتح التطبيق تلقائياً، <a href="${playStoreUrl}">اضغط هنا لتحميله</a>.</p>
+    <div class="card">
+        <h2>أهلاً بك في سوقكم 🏡</h2>
+        <p>يبدو أنك تستخدم متصفح فيسبوك.</p>
+        <p>للحصول على أفضل تجربة، يرجى المتابعة عبر تطبيق سوقكم.</p>
+        <a href="${intentUrl}" class="btn">🚀 فتح في التطبيق</a>
+        <a href="${playStoreUrl}" class="btn btn-outline">📥 تحميل التطبيق</a>
     </div>
     <script>
-        // Attempt to open the app natively using Intent URI
-        window.location.href = "${intentUrl}";
-        
-        // If it fails (app not installed), fallback to Play Store after 2.5 seconds
+        // Attempt to auto-redirect. Facebook may block this since it lacks user interaction.
         setTimeout(function() {
-            window.location.href = "${playStoreUrl}";
-        }, 2500);
+            window.location.href = "${intentUrl}";
+        }, 300);
     </script>
 </body>
 </html>`;
@@ -190,29 +200,39 @@ app.get('/category/:id', async (req, res) => {
         // Aggressively break out of Messenger WebView on Android
         if (userAgent.toLowerCase().includes('android')) {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sooqcom.app';
-            // Use Android Intent URL to force opening the app, or fallback to Play Store
-            const intentUrl = `intent://category/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;end`;
+            // Use Android Intent URL to force opening the app natively.
+            // S.browser_fallback_url natively handles the fallback to Play Store if the app isn't installed.
+            const intentUrl = `intent://category/${id}${queryString}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
             
             const jsRedirectHtml = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>جاري التحويل للتطبيق...</title>
+    <title>تطبيق سوقكم</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { text-align: center; font-family: sans-serif; direction: rtl; padding: 20px; background: #f0f4f8; margin: 0; }
+        .card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-top: 15vh; }
+        .btn { display: inline-block; padding: 14px 24px; background: #0056ff; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 18px; margin-top: 20px; width: 85%; max-width: 300px; }
+        .btn-outline { background: white; color: #0056ff; border: 2px solid #0056ff; margin-top: 15px; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; line-height: 1.5; margin-bottom: 5px; }
+    </style>
 </head>
 <body>
-    <div style="text-align: center; margin-top: 50px; font-family: sans-serif; direction: rtl;">
-        <h3>جاري فتح القسم في تطبيق سوقكم...</h3>
-        <p>إذا لم يفتح التطبيق تلقائياً، <a href="${playStoreUrl}">اضغط هنا لتحميله</a>.</p>
+    <div class="card">
+        <h2>أهلاً بك في سوقكم 🏡</h2>
+        <p>يبدو أنك تستخدم متصفح فيسبوك.</p>
+        <p>للحصول على أفضل تجربة، يرجى المتابعة عبر تطبيق سوقكم.</p>
+        <a href="${intentUrl}" class="btn">🚀 فتح في التطبيق</a>
+        <a href="${playStoreUrl}" class="btn btn-outline">📥 تحميل التطبيق</a>
     </div>
     <script>
-        // Attempt to open the app natively using Intent URI
-        window.location.href = "${intentUrl}";
-        
-        // If it fails (app not installed), fallback to Play Store after 2.5 seconds
+        // Attempt to auto-redirect. Facebook may block this since it lacks user interaction.
         setTimeout(function() {
-            window.location.href = "${playStoreUrl}";
-        }, 2500);
+            window.location.href = "${intentUrl}";
+        }, 300);
     </script>
 </body>
 </html>`;
