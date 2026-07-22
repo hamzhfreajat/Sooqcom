@@ -641,8 +641,16 @@ function drawImageCover(ctx, img, x, y, w, h) {
 }
 
 const PORT = process.env.PORT || 3000;
+const BUILD_VERSION = 'v2.0-deeplink-fix-20260722';
+
+// Version endpoint to verify deployment
+app.get('/version', (req, res) => {
+    res.json({ version: BUILD_VERSION, timestamp: new Date().toISOString() });
+});
+
 app.listen(PORT, () => {
-    console.log(`✅ Sooqcom OG Image Service is running on port ${PORT}`);
+    console.log(`✅ Sooqcom OG Image Service ${BUILD_VERSION} is running on port ${PORT}`);
     console.log(`Test HTML Endpoint: http://localhost:${PORT}/ad/123`);
     console.log(`Test Image Endpoint: http://localhost:${PORT}/image/123.jpg`);
+    console.log(`AASA Endpoint: http://localhost:${PORT}/.well-known/apple-app-site-association`);
 });
