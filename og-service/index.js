@@ -136,8 +136,8 @@ setTimeout(function(){document.getElementById('fallback').style.display='block';
             return res.send(html);
         }
 
-        // Desktop or unknown - redirect to App Store
-        return res.redirect(302, appStoreUrl);
+        // Desktop or unknown - redirect to Website
+        return res.redirect(302, redirectUrl);
     }
     
     try {
