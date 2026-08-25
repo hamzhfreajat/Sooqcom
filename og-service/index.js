@@ -5,6 +5,7 @@ const { createCanvas, loadImage } = require('canvas');
 
 const app = express();
 app.use(cors());
+app.use(express.static('public'));
 
 const API_BASE = 'https://api.sooq-com.com/api';
 const MAIN_SITE = 'https://sooq-com.com';
@@ -94,22 +95,12 @@ app.get('/ad/:id', async (req, res) => {
         const intentUrl = `intent://${deepLinkPath}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
 
         // Common styles for the loading page
-        const pageStyle = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem;max-width:400px}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}`;
+        const pageStyle = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,sans-serif;background:#f5f7fa;color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:3.5rem 2.5rem;max-width:420px;width:90%;background:#ffffff;border-radius:32px;box-shadow:0 20px 40px rgba(0,0,0,0.08),0 1px 3px rgba(0,0,0,0.05)}.app-icon-wrapper{width:130px;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center}.app-icon-wrapper img{width:100%;height:auto;object-fit:contain}h1{font-size:1.85rem;margin-bottom:0.5rem;font-weight:700;color:#111827;letter-spacing:-0.5px}p{color:#6b7280;margin-bottom:2.5rem;font-size:1.1rem;line-height:1.6;padding:0 10px}.badges{display:flex;flex-direction:column;gap:14px;align-items:center}.store-badge{transition:transform 0.2s cubic-bezier(0.2,0.8,0.2,1),opacity 0.2s;display:inline-block}.store-badge:hover{opacity:0.9;transform:scale(1.02)}.store-badge:active{transform:scale(0.96)}.store-badge img{height:54px;display:block}`;
 
-        if (isAndroid) {
-            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم</title><style>${pageStyle}</style></head><body><div class="container"><div class="logo">س</div><h1>جاري فتح سوقكم...</h1><p>سيتم تحويلك إلى المتجر</p><div class="spinner"></div></div><script>window.location.href = "${playStoreUrl}";</script></body></html>`;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            return res.send(html);
-        }
-
-        if (isIOS) {
-            const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم</title><style>${pageStyle}</style></head><body><div class="container"><div class="logo">س</div><h1>جاري فتح سوقكم...</h1><p>سيتم تحويلك إلى المتجر</p><div class="spinner"></div></div><script>var storeUrl = "${appStoreUrl}".replace("https://", "itms-apps://"); window.location.replace(storeUrl);</script></body></html>`;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            return res.send(html);
-        }
-
-        // Desktop or unknown - redirect to Website
-        return res.redirect(302, redirectUrl);
+        const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم SOOQCOM</title><style>${pageStyle}</style></head><body><div class="container"><div class="app-icon-wrapper"><img src="${SHARE_DOMAIN}/app_icon.png" alt="سوقكم"></div><h1>تطبيق سوقكم</h1><p>حمّل التطبيق الآن لتجربة أسرع وأفضل في تصفح الإعلانات</p><div class="badges"><a href="${playStoreUrl}" class="store-badge" target="_top"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play"></a><a href="https://apps.apple.com/app/sooqcom-%D8%B3%D9%88%D9%82%D9%83%D9%85/id6785620545" class="store-badge" target="_top"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store"></a></div></div></body></html>`;
+        
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
     }
     
     try {
@@ -218,21 +209,12 @@ app.get('/category/:id', async (req, res) => {
         const deepLinkPath = `category/${id}${queryString}`;
         const customSchemeUrl = `sooqcom://${deepLinkPath}`;
         const intentUrl = `intent://${deepLinkPath}#Intent;scheme=sooqcom;package=com.sooqcom.app;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
-        const pageStyle = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:2rem}.logo{width:80px;height:80px;margin:0 auto 1.5rem;background:#00B2FF;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:#fff}h1{font-size:1.5rem;margin-bottom:0.5rem}p{color:#8899aa;margin-bottom:1.5rem;font-size:0.95rem}.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);border-top-color:#00B2FF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1.5rem}@keyframes spin{to{transform:rotate(360deg)}}`;
+        const pageStyle = `*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,Helvetica,sans-serif;background:#f5f7fa;color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;direction:rtl}.container{padding:3.5rem 2.5rem;max-width:420px;width:90%;background:#ffffff;border-radius:32px;box-shadow:0 20px 40px rgba(0,0,0,0.08),0 1px 3px rgba(0,0,0,0.05)}.app-icon-wrapper{width:130px;margin:0 auto 1.5rem;display:flex;align-items:center;justify-content:center}.app-icon-wrapper img{width:100%;height:auto;object-fit:contain}h1{font-size:1.85rem;margin-bottom:0.5rem;font-weight:700;color:#111827;letter-spacing:-0.5px}p{color:#6b7280;margin-bottom:2.5rem;font-size:1.1rem;line-height:1.6;padding:0 10px}.badges{display:flex;flex-direction:column;gap:14px;align-items:center}.store-badge{transition:transform 0.2s cubic-bezier(0.2,0.8,0.2,1),opacity 0.2s;display:inline-block}.store-badge:hover{opacity:0.9;transform:scale(1.02)}.store-badge:active{transform:scale(0.96)}.store-badge img{height:54px;display:block}`;
 
-        if (isAndroid) {
-            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم</title><style>${pageStyle}</style></head><body><div class="container"><div class="logo">س</div><h1>جاري فتح سوقكم...</h1><p>سيتم تحويلك إلى المتجر</p><div class="spinner"></div></div><script>window.location.href = "${playStoreUrl}";</script></body></html>`;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            return res.send(html);
-        }
-
-        if (isIOS) {
-            const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم</title><style>${pageStyle}</style></head><body><div class="container"><div class="logo">س</div><h1>جاري فتح سوقكم...</h1><p>سيتم تحويلك إلى المتجر</p><div class="spinner"></div></div><script>var storeUrl = "${appStoreUrl}".replace("https://", "itms-apps://"); window.location.replace(storeUrl);</script></body></html>`;
-            res.setHeader('Content-Type', 'text/html; charset=utf-8');
-            return res.send(html);
-        }
-
-        return res.redirect(302, redirectUrl);
+        const html = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>سوقكم SOOQCOM</title><style>${pageStyle}</style></head><body><div class="container"><div class="app-icon-wrapper"><img src="${SHARE_DOMAIN}/app_icon.png" alt="سوقكم"></div><h1>تطبيق سوقكم</h1><p>حمّل التطبيق الآن لتجربة أسرع وأفضل في تصفح الأقسام</p><div class="badges"><a href="${playStoreUrl}" class="store-badge" target="_top"><img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play"></a><a href="https://apps.apple.com/app/sooqcom-%D8%B3%D9%88%D9%82%D9%83%D9%85/id6785620545" class="store-badge" target="_top"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store"></a></div></div></body></html>`;
+        
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
     }
     
     try {
