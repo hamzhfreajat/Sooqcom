@@ -21,7 +21,7 @@ npm run dev
 
 ## Deploy
 
-Build the `Dockerfile`; the container listens on port 3000.
+Build the `Dockerfile`; the container listens on port 80 (set `PORT` to change it).
 
 ## Address scheme
 
