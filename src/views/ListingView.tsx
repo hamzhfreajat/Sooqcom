@@ -14,7 +14,7 @@ import { MIN_ADS_TO_INDEX, PAGE_SIZE } from "@/lib/config";
 import { type ListingQuery, type SearchParams, filterOptions, isRefined, readQuery, toFilterValue } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 import { dict } from "@/lib/i18n";
-import { absolute, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle, pageMetadata } from "@/lib/seo";
+import { absolute, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle, pageMetadata, pricesHeading } from "@/lib/seo";
 import {
   DEALS,
   FEATURES,
@@ -30,8 +30,10 @@ import {
   isPlain,
   listingPath,
   placeName,
+  pricesPath,
   supportsBedrooms,
   supportsCap,
+  supportsPriceGuide,
   supportsFeature,
   supportsFurnished,
   supportsRentPeriod,
@@ -77,7 +79,12 @@ function loadLanding(params: ListingParams, query: ListingQuery, filters: Return
     furnished: params.feature === "unfurnished" ? false : value.furnished === "yes" ? true : value.furnished === "no" ? false : undefined,
     owner: params.feature === "owner",
     instalments: params.feature === "instalments",
-    attrs: [...facetAttrs(value), ...(params.feature === "ground" ? ["floor:الطابق الأرضي"] : [])],
+    newBuilding: params.feature === "new",
+    attrs: [
+      ...facetAttrs(value),
+      ...(params.feature === "ground" ? ["floor:الطابق الأرضي"] : []),
+      ...(params.feature === "first" ? ["floor:1"] : []),
+    ],
     minPrice: query.minPrice,
     // A ceiling in the page's address, unless the visitor chose a lower one
     maxPrice: params.cap ? Math.min(params.cap, query.maxPrice ?? params.cap) : query.maxPrice,
@@ -255,6 +262,16 @@ export default async function ListingView({
                   <SortSelect />
                 </div>
                 <ActiveFilters />
+                {/* The typical price of every area, for this kind of property in this city */}
+                {plain && !params.region && params.type && supportsPriceGuide(params.deal, params.type) && landing.total >= 30 && (
+                  <Link
+                    href={pricesPath(locale, { deal: params.deal, type: params.type, city: params.city })}
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:underline"
+                  >
+                    <Icon name="chart" size={16} />
+                    {pricesHeading(locale, { deal: params.deal, type: params.type, city: params.city })}
+                  </Link>
+                )}
               </header>
 
               {query.q && (

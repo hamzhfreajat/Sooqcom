@@ -9,8 +9,8 @@ import SmartSearch from "@/components/SmartSearch";
 import { getLanding, getSitemapLanding, getTaxonomy } from "@/lib/api";
 import { adLocation, formatNumber, formatPrice } from "@/lib/format";
 import { dict } from "@/lib/i18n";
-import { organizationJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
-import { DEALS, adPath, hasEnglishName, listingPath, placeName, placeSlug, taxonomyIndex, typeOfCategory, typesForDeal } from "@/lib/taxonomy";
+import { organizationJsonLd, pageMetadata, pricesHeading, websiteJsonLd } from "@/lib/seo";
+import { DEALS, adPath, hasEnglishName, listingPath, placeName, placeSlug, pricesPath, taxonomyIndex, typeOfCategory, typesForDeal } from "@/lib/taxonomy";
 import type { AdCard, Deal, Locale } from "@/lib/types";
 
 export function homeMetadata(locale: Locale): Metadata {
@@ -186,6 +186,26 @@ export default async function HomeView({ locale }: { locale: Locale }) {
                 </Link>
               </li>
             ))}
+          </ul>
+        </section>
+
+        {/* Price guides of the cities with the most ads, for renting and for buying an apartment */}
+        <section className="mt-14" aria-labelledby="prices-title">
+          <h2 id="prices-title" className="section-title">{locale === "en" ? "Property prices by area" : "أسعار العقارات حسب المنطقة"}</h2>
+          <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
+            {cities
+              .filter(({ city, count }) => count >= 60 && (locale === "ar" || hasEnglishName(city)))
+              .slice(0, 4)
+              .flatMap(({ city }) =>
+                (["rent", "sale"] as Deal[]).map((deal) => ({ key: `${city.id}-${deal}`, params: { deal, type: apartments, city } })),
+              )
+              .map(({ key, params }) => (
+                <li key={key}>
+                  <Link href={pricesPath(locale, params)} className="block border-b border-line py-2.5 text-sm text-body transition hover:text-brand-600">
+                    {pricesHeading(locale, params)}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </section>
 

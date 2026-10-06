@@ -81,7 +81,7 @@ export interface Landing {
   /** Ads each narrower page of this scope would hold (rentals only; zero otherwise) */
   refinements?: {
     furnished: number; daily: number; monthly: number;
-    unfurnished?: number; owner?: number; instalments?: number; ground?: number;
+    unfurnished?: number; owner?: number; instalments?: number; ground?: number; first?: number; new?: number;
     /** Ads at or under each price ceiling, keyed by the ceiling */
     caps?: Record<string, number>;
   };
@@ -105,6 +105,22 @@ export interface AdDetail extends AdCard {
   breadcrumb: { id: number; name: string }[];
   market: PriceStats;
   similar: AdCard[];
+}
+
+/** One line of a price guide: an area, a city, or a number of bedrooms. */
+export interface PriceRow {
+  count: number;
+  median: number;
+  low: number;
+  high: number;
+}
+
+export interface PriceGuide {
+  deal: Deal;
+  stats: PriceStats;
+  places: (PriceRow & City)[];
+  bedrooms: (PriceRow & { value: number })[];
+  updated_at: string | null;
 }
 
 /** Ads a refinement page would hold: feature is "owner", "unfurnished", "instalments", "ground" or "cap:200". */

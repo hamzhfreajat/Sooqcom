@@ -1,5 +1,5 @@
 import { API_URL, PAGE_SIZE, REVALIDATE_SECONDS } from "./config";
-import type { AdDetail, Landing, SitemapFeatureRow, SitemapLandingRow, Taxonomy } from "./types";
+import type { AdDetail, Landing, PriceGuide, SitemapFeatureRow, SitemapLandingRow, Taxonomy } from "./types";
 
 export class ApiNotFound extends Error {}
 
@@ -31,6 +31,8 @@ export interface LandingQuery {
   owner?: boolean;
   /** Can be paid in instalments */
   instalments?: boolean;
+  /** Built within the last year */
+  newBuilding?: boolean;
   /** Attribute filters as "name:value" */
   attrs?: string[];
   minArea?: number;
@@ -56,12 +58,18 @@ export function getLanding(query: LandingQuery): Promise<Landing> {
   if (query.furnished !== undefined) params.set("furnished", String(query.furnished));
   if (query.owner) params.set("owner", "true");
   if (query.instalments) params.set("instalments", "true");
+  if (query.newBuilding) params.set("new_building", "true");
   if (query.minPrice !== undefined) params.set("min_price", String(query.minPrice));
   if (query.maxPrice !== undefined) params.set("max_price", String(query.maxPrice));
   if (query.sort && query.sort !== "newest") params.set("sort", query.sort);
   if (query.page && query.page > 1) params.set("page", String(query.page));
   params.set("page_size", String(query.pageSize ?? PAGE_SIZE));
   return get<Landing>(`/web/landing?${params.toString()}`);
+}
+
+/** Typical prices of one kind of property, per area of a city or per city. */
+export function getPrices(categoryId: number, cityId?: number): Promise<PriceGuide> {
+  return get<PriceGuide>(`/web/prices?category_id=${categoryId}${cityId !== undefined ? `&city_id=${cityId}` : ""}`, 3600);
 }
 
 export function getAd(id: number): Promise<AdDetail> {

@@ -1,6 +1,6 @@
 import { getSitemapAds } from "@/lib/api";
 import { absolute } from "@/lib/seo";
-import { ADS_PER_SITEMAP, listingEntries, staticEntries, urlsetXml } from "@/lib/sitemap";
+import { ADS_PER_SITEMAP, listingEntries, priceEntries, staticEntries, urlsetXml } from "@/lib/sitemap";
 import { adPath } from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
     entries = [...staticEntries("ar"), ...staticEntries("en")].map((entry) => ({ url: absolute(entry.path) }));
   } else if (file === "listings-ar" || file === "listings-en") {
     const locale = file.endsWith("en") ? "en" : "ar";
-    entries = (await listingEntries(locale)).map((entry) => ({ url: absolute(entry.path), lastModified: entry.lastModified }));
+    const [prices, listings] = await Promise.all([priceEntries(locale), listingEntries(locale)]);
+    entries = [...prices, ...listings].map((entry) => ({ url: absolute(entry.path), lastModified: entry.lastModified }));
   } else {
     const match = file.match(/^ads-(\d+)$/);
     if (match) {

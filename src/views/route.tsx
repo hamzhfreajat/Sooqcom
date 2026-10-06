@@ -2,12 +2,17 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { ApiNotFound, getAd, getTaxonomy } from "@/lib/api";
-import { AD_SEGMENT, type ListingParams, adPath, resolveListing } from "@/lib/taxonomy";
+import { AD_SEGMENT, type ListingParams, type PricesParams, adPath, resolveListing, resolvePrices } from "@/lib/taxonomy";
 import type { AdDetail, Locale } from "@/lib/types";
 import AdView, { adMetadata } from "./AdView";
 import ListingView, { type SearchParams, listingMetadata } from "./ListingView";
+import PricesView, { pricesMetadata } from "./PricesView";
 
-type Resolved = { kind: "ad"; ad: AdDetail; requested: string } | { kind: "listing"; params: ListingParams } | null;
+type Resolved =
+  | { kind: "ad"; ad: AdDetail; requested: string }
+  | { kind: "listing"; params: ListingParams }
+  | { kind: "prices"; params: PricesParams }
+  | null;
 
 function decode(segment: string): string {
   try {
@@ -32,7 +37,10 @@ const resolve = cache(async (locale: Locale, joined: string): Promise<Resolved> 
     }
   }
 
-  const params = resolveListing(locale, segments, await getTaxonomy());
+  const taxonomy = await getTaxonomy();
+  const prices = resolvePrices(locale, segments, taxonomy);
+  if (prices) return { kind: "prices", params: prices };
+  const params = resolveListing(locale, segments, taxonomy);
   return params ? { kind: "listing", params } : null;
 });
 
@@ -47,6 +55,10 @@ export function makeRoute(locale: Locale) {
     const resolved = await resolve(locale, (await params).path.join("/"));
     if (!resolved) return { robots: { index: false, follow: false } };
     if (resolved.kind === "ad") return adMetadata(locale, resolved.ad);
+    if (resolved.kind === "prices") {
+      // A guide with no ads behind it is a missing page, not an error
+      return pricesMetadata(locale, resolved.params).catch(() => ({ robots: { index: false, follow: false } }));
+    }
     return listingMetadata(locale, resolved.params, await searchParams);
   }
 
@@ -62,6 +74,7 @@ export function makeRoute(locale: Locale) {
       }
       return <AdView locale={locale} ad={resolved.ad} />;
     }
+    if (resolved.kind === "prices") return <PricesView locale={locale} params={resolved.params} />;
     return <ListingView locale={locale} params={resolved.params} searchParams={await searchParams} />;
   }
 

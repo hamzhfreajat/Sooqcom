@@ -8,10 +8,12 @@ import {
   dealOfCategory,
   englishIndexable,
   listingPath,
+  pricesPath,
   supportsBedrooms,
   supportsCap,
   supportsFeature,
   supportsFurnished,
+  supportsPriceGuide,
   supportsRentPeriod,
   taxonomyIndex,
   typeOfCategory,
@@ -98,6 +100,34 @@ export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
     .filter((page) => page.count >= MIN_ADS_TO_INDEX && (locale === "ar" || englishIndexable(page.params)))
     .sort((a, b) => b.count - a.count)
     .map((page) => ({ path: listingPath(locale, page.params), lastModified: page.latest || undefined }));
+}
+
+/** A price guide is listed when its kind of property has this many ads in the place. */
+const MIN_ADS_FOR_PRICE_GUIDE = 30;
+
+/** Price guides: one per kind of property for the country, and one per city with enough ads. */
+export async function priceEntries(locale: Locale): Promise<SitemapEntry[]> {
+  const [rows, taxonomy] = await Promise.all([getSitemapLanding(), getTaxonomy()]);
+  const index = taxonomyIndex(taxonomy);
+  const totals = new Map<string, { path: string; count: number; latest: string }>();
+  for (const row of rows) {
+    const deal = dealOfCategory(row.category_id, taxonomy);
+    const type = deal ? typeOfCategory(row.category_id, deal, taxonomy) : undefined;
+    if (!deal || !type || !supportsPriceGuide(deal, type)) continue;
+    const city = row.city_id != null ? index.citiesById.get(row.city_id) : undefined;
+    for (const params of [{ deal, type }, ...(city ? [{ deal, type, city }] : [])]) {
+      if (locale === "en" && !englishIndexable({ deal, city: params.city })) continue;
+      const path = pricesPath(locale, params);
+      const entry = totals.get(path) ?? { path, count: 0, latest: "" };
+      entry.count += row.count;
+      if (row.latest && row.latest > entry.latest) entry.latest = row.latest;
+      totals.set(path, entry);
+    }
+  }
+  return [...totals.values()]
+    .filter((entry) => entry.count >= MIN_ADS_FOR_PRICE_GUIDE)
+    .sort((a, b) => b.count - a.count)
+    .map((entry) => ({ path: entry.path, lastModified: entry.latest || undefined }));
 }
 
 export function staticEntries(locale: Locale): SitemapEntry[] {

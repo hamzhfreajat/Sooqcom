@@ -105,12 +105,14 @@ export const hasEnglishName = (place?: City | null) => !place || isLatin(place.n
  * More refinements with a page of their own, each one a phrase people search for
  * ("شقق للايجار من المالك", "شقق فارغة للايجار", "شقق للبيع بالتقسيط", "شقة ارضية للايجار").
  */
-export type Feature = "unfurnished" | "owner" | "instalments" | "ground";
+export type Feature = "unfurnished" | "owner" | "instalments" | "ground" | "first" | "new";
 export const FEATURES: Record<Feature, { slug: Record<Locale, string>; deals: Deal[]; types?: string[] }> = {
   unfurnished: { slug: { ar: "فارغة", en: "unfurnished" }, deals: ["rent"], types: ["apartments", "studios", "houses", "villas", "roof", "duplex", "full-floor"] },
   owner: { slug: { ar: "من-المالك", en: "by-owner" }, deals: ["rent", "sale"] },
   instalments: { slug: { ar: "بالتقسيط", en: "instalments" }, deals: ["sale"] },
   ground: { slug: { ar: "طابق-ارضي", en: "ground-floor" }, deals: ["rent", "sale"], types: ["apartments"] },
+  first: { slug: { ar: "طابق-اول", en: "first-floor" }, deals: ["rent", "sale"], types: ["apartments"] },
+  new: { slug: { ar: "جديدة", en: "new" }, deals: ["rent", "sale"], types: ["apartments"] },
 };
 export const supportsFeature = (feature: Feature, deal: Deal, type?: PropertyType) =>
   !!type && FEATURES[feature].deals.includes(deal) && (!FEATURES[feature].types || FEATURES[feature].types.includes(type.key));
@@ -274,6 +276,38 @@ export function listingPath(locale: Locale, params: ListingParams): string {
   else if (params.feature) parts.push(FEATURES[params.feature].slug[locale]);
   else if (params.cap) parts.push(capSlug(locale, params.deal, params.cap));
   return `${locale === "en" ? "/en" : ""}/${parts.join("/")}`;
+}
+
+// ---------------------------------------------------------------------------
+// Price guides: /اسعار/للإيجار/شقق/عمان   /en/prices/rent/apartments/amman
+// ---------------------------------------------------------------------------
+export const PRICES_SEGMENT: Record<Locale, string> = { ar: "اسعار", en: "prices" };
+const PRICE_GUIDE_KEYS = ["apartments", "studios", "houses", "villas", "lands"];
+/** The kinds of property with enough ads, and enough people asking, for a price guide. */
+export const PRICE_GUIDE_TYPES = PROPERTY_TYPES.filter((type) => PRICE_GUIDE_KEYS.includes(type.key));
+export const supportsPriceGuide = (deal: Deal, type?: PropertyType) => !!type && PRICE_GUIDE_KEYS.includes(type.key) && type.ids[deal] !== undefined;
+
+export interface PricesParams {
+  deal: Deal;
+  type: PropertyType;
+  city?: City;
+}
+
+export function pricesPath(locale: Locale, params: PricesParams): string {
+  const parts = [PRICES_SEGMENT[locale], DEALS[params.deal].slug[locale], params.type.slug[locale]];
+  if (params.city) parts.push(placeSlug(params.city, locale));
+  return `${locale === "en" ? "/en" : ""}/${parts.join("/")}`;
+}
+
+/** Turns URL segments (already decoded) into a price guide, or null if they are not one. */
+export function resolvePrices(locale: Locale, segments: string[], taxonomy: Taxonomy): PricesParams | null {
+  if (segments[0] !== PRICES_SEGMENT[locale] || segments.length < 3 || segments.length > 4) return null;
+  const deal = dealFromSlug(segments[1], locale);
+  const type = deal ? PRICE_GUIDE_TYPES.find((t) => t.slug[locale] === segments[2] && t.ids[deal] !== undefined) : undefined;
+  if (!deal || !type) return null;
+  if (segments.length === 3) return { deal, type };
+  const city = taxonomyIndex(taxonomy).citiesBySlug[locale].get(segments[3]);
+  return city ? { deal, type, city } : null;
 }
 
 export function adPath(locale: Locale, ad: { id: number; slug?: string }): string {

@@ -18,6 +18,7 @@ import {
   DEALS,
   RENT_PERIODS,
   type ListingParams,
+  type PricesParams,
   adPath,
   englishIndexable,
   homePath,
@@ -39,7 +40,13 @@ export function listingHeading(locale: Locale, params: ListingParams): string {
     const lead = [params.bedrooms ? `${params.bedrooms}-Bedroom` : "", params.furnished ? "Furnished" : ""]
       .filter(Boolean)
       .join(" ");
-    const front = [lead, params.feature === "unfurnished" ? "Unfurnished" : "", params.feature === "ground" ? "Ground-Floor" : ""].filter(Boolean).join(" ");
+    const front = [
+      lead,
+      params.feature === "new" ? "New" : "",
+      params.feature === "unfurnished" ? "Unfurnished" : "",
+      params.feature === "ground" ? "Ground-Floor" : "",
+      params.feature === "first" ? "First-Floor" : "",
+    ].filter(Boolean).join(" ");
     const letting = params.period ? `for ${RENT_PERIODS[params.period].label.en} Rent` : deal;
     const tail = [
       params.feature === "owner" ? " by Owner" : "",
@@ -56,6 +63,9 @@ export function listingHeading(locale: Locale, params: ListingParams): string {
     // "استوديو فارغ" but "شقق فارغة"
     params.feature === "unfurnished" ? (params.type?.masculine ? "فارغ" : "فارغة") : "",
     params.feature === "ground" ? "طابق أرضي" : "",
+    params.feature === "first" ? "طابق أول" : "",
+    // "شقق جديدة" but "استوديو جديد"
+    params.feature === "new" ? (params.type?.masculine ? "جديد" : "جديدة") : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -68,6 +78,26 @@ export function listingHeading(locale: Locale, params: ListingParams): string {
     params.cap ? ` بأقل من ${params.cap >= 1000 ? `${formatNumber(params.cap / 1000)} ألف` : formatNumber(params.cap)} دينار` : "",
   ].join("");
   return `${type}${extras ? ` ${extras}` : ""} ${letting}${tail} في ${region ? `${region}، ` : ""}${city}`;
+}
+
+// What each kind of property is called when talking about its prices
+const PRICE_NOUN: Record<string, { ar: string; en: string }> = {
+  apartments: { ar: "الشقق", en: "Apartment" },
+  studios: { ar: "الاستوديوهات", en: "Studio" },
+  houses: { ar: "البيوت", en: "House" },
+  villas: { ar: "الفلل", en: "Villa" },
+  lands: { ar: "الأراضي", en: "Land" },
+};
+
+/** "أسعار إيجار الشقق في عمان حسب المنطقة" / "Apartment Rent Prices in Amman by Area" */
+export function pricesHeading(locale: Locale, params: PricesParams): string {
+  const noun = PRICE_NOUN[params.type.key] ?? { ar: params.type.label.ar, en: params.type.label.en };
+  const place = params.city ? placeName(params.city, locale) : dict(locale).jordan;
+  if (locale === "en") {
+    return `${noun.en} ${params.deal === "rent" ? "Rent" : "Sale"} Prices in ${place} by ${params.city ? "Area" : "City"}`;
+  }
+  const what = params.deal === "rent" ? `أسعار إيجار ${noun.ar}` : `أسعار ${noun.ar} للبيع`;
+  return `${what} في ${place} حسب ${params.city ? "المنطقة" : "المدينة"}`;
 }
 
 /**
@@ -380,12 +410,12 @@ export function listingFaqs(locale: Locale, params: ListingParams, landing: Land
 
   if (locale === "en") {
     faqs.push({
-      question: `How many ${heading.toLowerCase()} are available?`,
+      question: `How many listings are there for ${heading}?`,
       answer: `There are currently ${formatNumber(landing.total)} listings on Sooqcom, each with photos and a price. New listings are added every day.`,
     });
     if (stats && stats.count >= 5 && stats.median != null) {
       faqs.push({
-        question: `What is the typical price of ${heading.toLowerCase()}?`,
+        question: `What is the typical price of ${heading}?`,
         answer: `The median price is ${formatPrice(stats.median, "en")}${perMonth ? " per month" : ""}. Most listings fall between ${formatPrice(stats.low, "en")} and ${formatPrice(stats.high, "en")}, based on ${formatNumber(stats.count)} listings.`,
       });
     }
@@ -393,6 +423,7 @@ export function listingFaqs(locale: Locale, params: ListingParams, landing: Land
       const top = landing.locations.slice(0, 5).map((l) => `${placeName(l, "en")} (${formatNumber(l.count)})`);
       faqs.push({ question: `Which areas have the most listings?`, answer: `The areas with the most listings are ${top.join(", ")}.` });
     }
+    faqs.push(...detailFaqs("en", params, landing));
     return faqs;
   }
 
@@ -409,6 +440,43 @@ export function listingFaqs(locale: Locale, params: ListingParams, landing: Land
   if (landing.locations.length >= 3) {
     const top = landing.locations.slice(0, 5).map((l) => `${l.name_ar} (${formatNumber(l.count)})`);
     faqs.push({ question: `ما هي المناطق الأكثر إعلانات؟`, answer: `أكثر المناطق إعلانات: ${top.join("، ")}.` });
+  }
+  faqs.push(...detailFaqs("ar", params, landing));
+  return faqs;
+}
+
+/** Answers about bedrooms, furnishing and owners, on the plain page of a type and only when the counts exist. */
+function detailFaqs(locale: Locale, params: ListingParams, landing: Landing) {
+  const faqs: { question: string; answer: string }[] = [];
+  if (params.bedrooms || params.furnished || params.period || params.feature || params.cap || !params.type) return faqs;
+  const type = params.type.label[locale];
+  const counts = landing.refinements;
+  const en = locale === "en";
+
+  const beds = [...landing.bedrooms].filter((b) => b.count > 0).sort((a, b) => b.count - a.count);
+  if (beds.length >= 2) {
+    // "غرفة نوم واحدة", "غرفتا نوم", "3 غرف نوم"
+    const arabic = (n: number) => (n === 1 ? "غرفة نوم واحدة" : n === 2 ? "غرفتا نوم" : `${n} ${dict("ar").bedrooms}`);
+    const list = beds.slice(0, 3).map((b) => (en ? `${b.value}-bedroom (${formatNumber(b.count)})` : `${arabic(b.value)} (${formatNumber(b.count)})`));
+    faqs.push(
+      en
+        ? { question: `How many bedrooms do most ${type.toLowerCase()} here have?`, answer: `The most common sizes are ${list.join(", ")}.` }
+        : { question: `ما عدد غرف النوم الأكثر توفراً في إعلانات ${type} هنا؟`, answer: `الأكثر توفراً: ${list.join("، ")}.` },
+    );
+  }
+  if (params.deal === "rent" && counts && counts.furnished > 0 && (counts.unfurnished ?? 0) > 0) {
+    faqs.push(
+      en
+        ? { question: `Are the ${type.toLowerCase()} furnished or unfurnished?`, answer: `${formatNumber(counts.furnished)} listings are furnished and ${formatNumber(counts.unfurnished ?? 0)} are unfurnished. The rest do not say.` }
+        : { question: `هل إعلانات ${type} هنا مفروشة أم فارغة؟`, answer: `${formatNumber(counts.furnished)} إعلان مفروش و${formatNumber(counts.unfurnished ?? 0)} إعلان فارغ، وباقي الإعلانات لم تذكر ذلك.` },
+    );
+  }
+  if (counts && (counts.owner ?? 0) >= 3) {
+    faqs.push(
+      en
+        ? { question: `Are there listings placed directly by the owner?`, answer: `Yes. ${formatNumber(counts.owner ?? 0)} listings say they are offered by the owner with no agent.` }
+        : { question: `هل توجد إعلانات من المالك مباشرة؟`, answer: `نعم، ${formatNumber(counts.owner ?? 0)} إعلان يذكر أنه من المالك مباشرة دون وسيط.` },
+    );
   }
   return faqs;
 }
