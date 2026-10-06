@@ -1,5 +1,5 @@
 import { API_URL, PAGE_SIZE, REVALIDATE_SECONDS } from "./config";
-import type { AdDetail, Landing, SitemapLandingRow, Taxonomy } from "./types";
+import type { AdDetail, Landing, SitemapFeatureRow, SitemapLandingRow, Taxonomy } from "./types";
 
 export class ApiNotFound extends Error {}
 
@@ -27,6 +27,10 @@ export interface LandingQuery {
   bedrooms?: number[];
   bathrooms?: number[];
   furnished?: boolean;
+  /** Advertised by the owner, with no agent */
+  owner?: boolean;
+  /** Can be paid in instalments */
+  instalments?: boolean;
   /** Attribute filters as "name:value" */
   attrs?: string[];
   minArea?: number;
@@ -50,6 +54,8 @@ export function getLanding(query: LandingQuery): Promise<Landing> {
   if (query.minArea !== undefined) params.set("min_area", String(query.minArea));
   if (query.maxArea !== undefined) params.set("max_area", String(query.maxArea));
   if (query.furnished !== undefined) params.set("furnished", String(query.furnished));
+  if (query.owner) params.set("owner", "true");
+  if (query.instalments) params.set("instalments", "true");
   if (query.minPrice !== undefined) params.set("min_price", String(query.minPrice));
   if (query.maxPrice !== undefined) params.set("max_price", String(query.maxPrice));
   if (query.sort && query.sort !== "newest") params.set("sort", query.sort);
@@ -66,8 +72,13 @@ export function getSitemapLanding(): Promise<SitemapLandingRow[]> {
   return get<SitemapLandingRow[]>("/web/sitemap/landing", 3600);
 }
 
+/** Empty when the backend does not offer it yet, so the rest of the sitemap still works. */
+export function getSitemapFeatures(): Promise<SitemapFeatureRow[]> {
+  return get<SitemapFeatureRow[]>("/web/sitemap/features", 3600).catch(() => []);
+}
+
 export function getSitemapAds(page: number, pageSize: number) {
-  return get<{ total: number; items: { id: number; slug: string; updated_at: string | null }[] }>(
+  return get<{ total: number; items: { id: number; slug: string; updated_at: string | null; image?: string | null }[] }>(
     `/web/sitemap/ads?page=${page}&page_size=${pageSize}`,
     3600,
   );

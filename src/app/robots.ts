@@ -7,8 +7,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // Sorted and price-filtered variants repeat the same ads as the page they refine
-        disallow: ["/*?*sort=", "/*?*min=", "/*?*max="],
+        disallow: [
+          // Sorted and price-filtered variants repeat the same ads as the page they refine
+          "/*?*sort=", "/*?*min=", "/*?*max=",
+          // Data endpoints of the site itself: nothing there is a page
+          "/api/",
+        ],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

@@ -9,17 +9,13 @@ import SmartSearch from "@/components/SmartSearch";
 import { getLanding, getSitemapLanding, getTaxonomy } from "@/lib/api";
 import { adLocation, formatNumber, formatPrice } from "@/lib/format";
 import { dict } from "@/lib/i18n";
-import { alternatesFor, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { organizationJsonLd, pageMetadata, websiteJsonLd } from "@/lib/seo";
 import { DEALS, adPath, hasEnglishName, listingPath, placeName, placeSlug, taxonomyIndex, typeOfCategory, typesForDeal } from "@/lib/taxonomy";
 import type { AdCard, Deal, Locale } from "@/lib/types";
 
 export function homeMetadata(locale: Locale): Metadata {
   const t = dict(locale);
-  return {
-    title: { absolute: `${t.brand} | ${t.hero_title}` },
-    description: t.hero_subtitle,
-    alternates: alternatesFor("/", "/en", locale),
-  };
+  return pageMetadata({ locale, title: t.home_title, absoluteTitle: true, description: t.home_description, arPath: "/", enPath: "/en" });
 }
 
 const AMMAN_ID = 5;
@@ -28,7 +24,7 @@ function HeroPhoto({ ad, locale }: { ad: AdCard; locale: Locale }) {
   return (
     <Link href={adPath(locale, ad)} tabIndex={-1} className="group relative block overflow-hidden rounded-3xl border-4 border-white bg-white shadow-lift">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={ad.image as string} alt="" loading="eager" className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105" />
+      <img src={ad.image as string} alt={ad.title} loading="eager" className="aspect-[4/3] w-full object-cover transition duration-500 group-hover:scale-105" />
       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 to-transparent px-4 pb-3.5 pt-10">
         <span className="block text-lg font-bold text-white">{formatPrice(ad.price, locale)}</span>
         <span className="block truncate text-sm text-white/75">{adLocation(ad, locale)}</span>
@@ -231,7 +227,7 @@ export default async function HomeView({ locale }: { locale: Locale }) {
 
         <AppBand locale={locale} />
       </div>
-      <JsonLd data={organizationJsonLd()} />
+      <JsonLd data={organizationJsonLd(locale)} />
       <JsonLd data={websiteJsonLd(locale)} />
     </>
   );

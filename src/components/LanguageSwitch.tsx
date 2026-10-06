@@ -17,7 +17,7 @@ export default function LanguageSwitch({ locale, label }: { locale: Locale; labe
       lang={target}
       className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-bold text-body hover:bg-surface"
       onClick={(event) => {
-        const alternate = document.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${target}"]`);
+        const alternate = document.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang^="${target}"]`);
         if (alternate?.href) {
           event.preventDefault();
           window.location.href = alternate.href;

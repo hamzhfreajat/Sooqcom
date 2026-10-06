@@ -101,6 +101,29 @@ export function placeSlug(place: City, locale: Locale): string {
 /** English pages are only offered to search engines when the place has an English name. */
 export const hasEnglishName = (place?: City | null) => !place || isLatin(place.name_en);
 
+/**
+ * More refinements with a page of their own, each one a phrase people search for
+ * ("شقق للايجار من المالك", "شقق فارغة للايجار", "شقق للبيع بالتقسيط", "شقة ارضية للايجار").
+ */
+export type Feature = "unfurnished" | "owner" | "instalments" | "ground";
+export const FEATURES: Record<Feature, { slug: Record<Locale, string>; deals: Deal[]; types?: string[] }> = {
+  unfurnished: { slug: { ar: "فارغة", en: "unfurnished" }, deals: ["rent"], types: ["apartments", "studios", "houses", "villas", "roof", "duplex", "full-floor"] },
+  owner: { slug: { ar: "من-المالك", en: "by-owner" }, deals: ["rent", "sale"] },
+  instalments: { slug: { ar: "بالتقسيط", en: "instalments" }, deals: ["sale"] },
+  ground: { slug: { ar: "طابق-ارضي", en: "ground-floor" }, deals: ["rent", "sale"], types: ["apartments"] },
+};
+export const supportsFeature = (feature: Feature, deal: Deal, type?: PropertyType) =>
+  !!type && FEATURES[feature].deals.includes(deal) && (!FEATURES[feature].types || FEATURES[feature].types.includes(type.key));
+
+/** Price ceilings with a page of their own ("شقق للايجار 200 دينار", "شقق للبيع بسعر 30 الف"). Rents are per month. */
+export const PRICE_CAPS: Record<Deal, number[]> = { rent: [150, 200, 250, 300], sale: [20000, 30000, 40000, 50000] };
+const CAP_TYPES = new Set(["apartments", "studios", "houses"]);
+export const supportsCap = (type?: PropertyType) => !!type && CAP_TYPES.has(type.key);
+export function capSlug(locale: Locale, deal: Deal, cap: number): string {
+  if (locale === "en") return `under-${cap}`;
+  return deal === "sale" ? `اقل-من-${cap / 1000}-الف` : `اقل-من-${cap}-دينار`;
+}
+
 export interface ListingParams {
   deal: Deal;
   type?: PropertyType;
@@ -109,7 +132,14 @@ export interface ListingParams {
   bedrooms?: number;
   furnished?: boolean;
   period?: RentPeriod;
+  feature?: Feature;
+  /** Price ceiling in dinars (per month for rentals) */
+  cap?: number;
 }
+
+/** True when the page is the plain one for its type and place, with no refinement in its address. */
+export const isPlain = (params: ListingParams) =>
+  !params.bedrooms && !params.furnished && !params.period && !params.feature && !params.cap;
 
 export function categoryIdFor(params: ListingParams): number {
   return params.type?.ids[params.deal] ?? DEALS[params.deal].id;
@@ -215,12 +245,19 @@ export function resolveListing(locale: Locale, segments: string[], taxonomy: Tax
     } else if (segments[i] === FURNISHED_SLUG[locale] && supportsFurnished(params.deal, params.type)) {
       params.furnished = true;
       i++;
-    } else if (supportsRentPeriod(params.deal, params.type)) {
-      const period = (Object.keys(RENT_PERIODS) as RentPeriod[]).find((key) => RENT_PERIODS[key].slug[locale] === segments[i]);
-      if (period) {
-        params.period = period;
-        i++;
-      }
+    } else {
+      const segment = segments[i];
+      const period = supportsRentPeriod(params.deal, params.type)
+        ? (Object.keys(RENT_PERIODS) as RentPeriod[]).find((key) => RENT_PERIODS[key].slug[locale] === segment)
+        : undefined;
+      const feature = (Object.keys(FEATURES) as Feature[]).find(
+        (key) => FEATURES[key].slug[locale] === segment && supportsFeature(key, params.deal, params.type),
+      );
+      const cap = supportsCap(params.type) ? PRICE_CAPS[params.deal].find((value) => capSlug(locale, params.deal, value) === segment) : undefined;
+      if (period) params.period = period;
+      else if (feature) params.feature = feature;
+      else if (cap) params.cap = cap;
+      if (period || feature || cap) i++;
     }
   }
   return i === segments.length ? params : null;
@@ -234,6 +271,8 @@ export function listingPath(locale: Locale, params: ListingParams): string {
   if (params.bedrooms) parts.push(`${params.bedrooms}-${BEDROOM_SUFFIX[locale]}`);
   else if (params.furnished) parts.push(FURNISHED_SLUG[locale]);
   else if (params.period) parts.push(RENT_PERIODS[params.period].slug[locale]);
+  else if (params.feature) parts.push(FEATURES[params.feature].slug[locale]);
+  else if (params.cap) parts.push(capSlug(locale, params.deal, params.cap));
   return `${locale === "en" ? "/en" : ""}/${parts.join("/")}`;
 }
 

@@ -12,7 +12,7 @@ import { getTaxonomy } from "@/lib/api";
 import { SHARE_URL } from "@/lib/config";
 import { adLocation, cardImage, formatDate, formatPrice, monthlyPrice, plainText, pricePeriod } from "@/lib/format";
 import { DETAIL_LABELS, dict } from "@/lib/i18n";
-import { absolute, adJsonLd } from "@/lib/seo";
+import { absolute, adJsonLd, pageMetadata } from "@/lib/seo";
 import { DEALS, adPath, homePath, listingPath, placeName, taxonomyIndex, typeOfCategory } from "@/lib/taxonomy";
 import type { AdDetail, Locale } from "@/lib/types";
 
@@ -20,15 +20,20 @@ export function adMetadata(locale: Locale, ad: AdDetail): Metadata {
   const location = adLocation(ad, locale);
   const price = formatPrice(ad.price, locale);
   const title = [ad.seo_title ?? ad.title, price].filter(Boolean).join(" - ");
-  const description = `${ad.title}${location ? ` | ${location}` : ""}${price ? ` | ${price}` : ""}. ${plainText(ad.description, 140)}`;
-  return {
+  // Place and price first, then as much of the ad's own text as a search result shows
+  const lead = [location, price].filter(Boolean).join(" | ");
+  const description = `${lead ? `${lead}. ` : ""}${plainText(ad.description, Math.max(60, 155 - lead.length))}`;
+  return pageMetadata({
+    locale,
     title,
     description,
+    arPath: adPath("ar", ad),
     // The ad's text is Arabic in both languages, so the Arabic page is the one to index
-    alternates: { canonical: absolute(adPath("ar", ad)) },
-    robots: ad.indexable && locale === "ar" ? { index: true, follow: true } : { index: false, follow: true },
-    openGraph: { title, description, type: "article", images: ad.images.slice(0, 1) },
-  };
+    canonical: absolute(adPath("ar", ad)),
+    image: ad.images[0],
+    type: "article",
+    index: ad.indexable && locale === "ar",
+  });
 }
 
 export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDetail }) {

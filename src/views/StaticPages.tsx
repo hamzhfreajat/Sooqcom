@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Icon from "@/components/Icon";
-import { alternatesFor } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { SUPPORT_EMAIL } from "@/lib/config";
+import { aboutJsonLd, organizationJsonLd, pageMetadata } from "@/lib/seo";
 import type { Locale } from "@/lib/types";
 
 const TITLES: Record<string, Record<Locale, string>> = {
@@ -11,8 +13,33 @@ const TITLES: Record<string, Record<Locale, string>> = {
   "delete-data": { ar: "دليل حذف بيانات المستخدم", en: "User data deletion guide" },
 };
 
+const DESCRIPTIONS: Record<string, Record<Locale, string>> = {
+  about: {
+    ar: "تعرّف على سوقكم: منصة أردنية لإعلانات العقارات تجمع الشقق والبيوت والأراضي للبيع والإيجار في عمان وباقي المحافظات، مع أسعار السوق لكل منطقة.",
+    en: "About Sooqcom: a Jordanian property platform that brings apartments, houses and land for sale and rent in Amman and every governorate together, with market prices for each area.",
+  },
+  privacy: {
+    ar: "سياسة الخصوصية في سوقكم: البيانات التي نجمعها، كيف نستخدمها ونحميها، وحقوقك عليها.",
+    en: "Sooqcom's privacy policy: the data we collect, how we use and protect it, and your rights over it.",
+  },
+  "delete-data": {
+    ar: "طريقة طلب حذف حسابك وبياناتك من تطبيق وموقع سوقكم، خطوة بخطوة.",
+    en: "How to request the deletion of your account and data from the Sooqcom app and website, step by step.",
+  },
+};
+
 export function staticMetadata(locale: Locale, page: keyof typeof TITLES): Metadata {
-  return { title: TITLES[page][locale], alternates: alternatesFor(`/${page}`, `/en/${page}`, locale) };
+  return pageMetadata({ locale, title: TITLES[page][locale], description: DESCRIPTIONS[page][locale], arPath: `/${page}`, enPath: `/en/${page}` });
+}
+
+/** Structured data of the "about us" page: the page itself and the organisation it is about. */
+function AboutData({ locale }: { locale: Locale }) {
+  return (
+    <>
+      <JsonLd data={organizationJsonLd(locale)} />
+      <JsonLd data={aboutJsonLd(locale, TITLES.about[locale], locale === "en" ? "/en/about" : "/about")} />
+    </>
+  );
 }
 
 function Legal({ children }: { children: ReactNode }) {
@@ -27,16 +54,18 @@ export function AboutPage({ locale }: { locale: Locale }) {
   if (locale === "en") {
     return (
       <Legal>
+        <AboutData locale={locale} />
         <h1>About us</h1>
         <p>
-          Welcome to <strong>Sooqcom</strong>, the classifieds platform built to make buying, selling and discovering
-          local offers easier, safer and faster than ever.
+          <strong>Sooqcom</strong> is a Jordanian property platform. It brings apartments, houses, villas, land and
+          commercial property for sale and for rent, in Amman and every governorate of Jordan, into one place, on this
+          website and in the Sooqcom app for Android and iPhone.
         </p>
         <h2>Our mission</h2>
         <p>
-          Our mission is to empower communities by creating a smooth, transparent and trustworthy marketplace. We believe
-          technology should connect people, and Sooqcom was built to do exactly that, whether you are looking for a new
-          home, selling your car or offering professional services.
+          Our mission is to make finding a home or selling a property in Jordan simple, transparent and trustworthy.
+          Every area page shows the typical price of the listings it holds, so you can tell a fair price from an
+          expensive one before you call.
         </p>
         <h2>What sets us apart</h2>
         <ul>
@@ -47,22 +76,23 @@ export function AboutPage({ locale }: { locale: Locale }) {
         <h2>Contact us</h2>
         <p>
           Questions or suggestions? We would love to hear from you. Reach our support team through the Sooqcom app or
-          email us at support@sooq-com.com.
+          email us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
         </p>
       </Legal>
     );
   }
   return (
     <Legal>
+      <AboutData locale={locale} />
       <h1>من نحن</h1>
       <p>
-        مرحباً بكم في <strong>سوقكم</strong>، المنصة الإعلانية الرائدة المصممة لجعل عمليات البيع والشراء واكتشاف العروض
-        المحلية أسهل، أكثر أماناً، وأسرع من أي وقت مضى.
+        <strong>سوقكم</strong> منصة أردنية للعقارات. تجمع إعلانات الشقق والبيوت والفلل والأراضي والعقارات التجارية،
+        للبيع وللإيجار، في عمان وجميع محافظات الأردن في مكان واحد: على هذا الموقع وفي تطبيق سوقكم لأندرويد وآيفون.
       </p>
       <h2>مهمتنا</h2>
       <p>
-        مهمتنا هي تمكين المجتمعات من خلال إنشاء سوق سلس، شفاف، وجدير بالثقة. نحن نؤمن بأن التكنولوجيا يجب أن تربط بين
-        الناس، وقد تم بناء سوقكم للقيام بذلك تماماً — سواء كنت تبحث عن منزل جديد، أو تبيع سيارتك، أو تقدم خدمات مهنية.
+        مهمتنا أن نجعل البحث عن بيت أو بيع عقار في الأردن سهلاً وواضحاً وجديراً بالثقة. كل صفحة منطقة تعرض السعر
+        الشائع للإعلانات الموجودة فيها، لتعرف السعر العادل من المرتفع قبل أن تتصل.
       </p>
       <h2>لماذا نتميز</h2>
       <ul>

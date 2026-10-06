@@ -1,11 +1,16 @@
-import { getSitemapLanding, getTaxonomy } from "./api";
+import { getSitemapFeatures, getSitemapLanding, getTaxonomy } from "./api";
 import { MIN_ADS_TO_INDEX } from "./config";
 import {
+  FEATURES,
+  type Feature,
   type ListingParams,
+  PRICE_CAPS,
   dealOfCategory,
   englishIndexable,
   listingPath,
   supportsBedrooms,
+  supportsCap,
+  supportsFeature,
   supportsFurnished,
   supportsRentPeriod,
   taxonomyIndex,
@@ -25,7 +30,7 @@ export interface SitemapEntry {
  * Built from per-(category, city, region, bedrooms, furnished, rent period) counts, rolled up to each page level.
  */
 export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
-  const [rows, taxonomy] = await Promise.all([getSitemapLanding(), getTaxonomy()]);
+  const [rows, features, taxonomy] = await Promise.all([getSitemapLanding(), getSitemapFeatures(), getTaxonomy()]);
   const index = taxonomyIndex(taxonomy);
   const pages = new Map<string, { params: ListingParams; count: number; latest: string }>();
 
@@ -73,6 +78,22 @@ export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
     }
   }
 
+  // "من المالك", "فارغة", "بالتقسيط", "طابق أرضي" and the price ceilings
+  for (const row of features) {
+    const deal = dealOfCategory(row.category_id, taxonomy);
+    const type = deal ? typeOfCategory(row.category_id, deal, taxonomy) : undefined;
+    if (!deal || !type) continue;
+    const cap = row.feature.startsWith("cap:") ? Number(row.feature.slice(4)) : undefined;
+    const feature = cap === undefined && row.feature in FEATURES ? (row.feature as Feature) : undefined;
+    if (cap !== undefined ? !(supportsCap(type) && PRICE_CAPS[deal].includes(cap)) : !(feature && supportsFeature(feature, deal, type))) continue;
+    const city = row.city_id != null ? index.citiesById.get(row.city_id) : undefined;
+    const region = city && row.region_id != null ? index.regionsById.get(row.region_id) : undefined;
+    const extra = cap !== undefined ? { cap } : { feature };
+    add({ deal, type, ...extra }, row.count, row.latest);
+    if (city) add({ deal, type, city, ...extra }, row.count, row.latest);
+    if (city && region) add({ deal, type, city, region, ...extra }, row.count, row.latest);
+  }
+
   return [...pages.values()]
     .filter((page) => page.count >= MIN_ADS_TO_INDEX && (locale === "ar" || englishIndexable(page.params)))
     .sort((a, b) => b.count - a.count)
@@ -87,14 +108,17 @@ export function staticEntries(locale: Locale): SitemapEntry[] {
 const escapeXml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-export function urlsetXml(entries: { url: string; lastModified?: string }[]): string {
+/** `image` is the page's main photo; search engines use it to show the page in image results. */
+export function urlsetXml(entries: { url: string; lastModified?: string; image?: string | null }[]): string {
   const body = entries
     .map(
       (entry) =>
-        `<url><loc>${escapeXml(entry.url)}</loc>${entry.lastModified ? `<lastmod>${entry.lastModified.slice(0, 10)}</lastmod>` : ""}</url>`,
+        `<url><loc>${escapeXml(entry.url)}</loc>${entry.lastModified ? `<lastmod>${entry.lastModified.slice(0, 10)}</lastmod>` : ""}${
+          entry.image ? `<image:image><image:loc>${escapeXml(entry.image)}</image:loc></image:image>` : ""
+        }</url>`,
     )
     .join("");
-  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${body}</urlset>`;
 }
 
 export function indexXml(urls: string[]): string {

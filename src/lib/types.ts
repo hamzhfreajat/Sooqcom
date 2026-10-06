@@ -79,7 +79,12 @@ export interface Landing {
   locations: PlaceCount[];
   bedrooms: { value: number; count: number }[];
   /** Ads each narrower page of this scope would hold (rentals only; zero otherwise) */
-  refinements?: { furnished: number; daily: number; monthly: number };
+  refinements?: {
+    furnished: number; daily: number; monthly: number;
+    unfurnished?: number; owner?: number; instalments?: number; ground?: number;
+    /** Ads at or under each price ceiling, keyed by the ceiling */
+    caps?: Record<string, number>;
+  };
   categories: { id: number; name: string; count: number }[];
   breadcrumb: { id: number; name: string }[];
   /** Ads per category of the deal in the chosen place, children included */
@@ -100,6 +105,16 @@ export interface AdDetail extends AdCard {
   breadcrumb: { id: number; name: string }[];
   market: PriceStats;
   similar: AdCard[];
+}
+
+/** Ads a refinement page would hold: feature is "owner", "unfurnished", "instalments", "ground" or "cap:200". */
+export interface SitemapFeatureRow {
+  feature: string;
+  category_id: number;
+  city_id: number | null;
+  region_id: number | null;
+  count: number;
+  latest: string | null;
 }
 
 export interface SitemapLandingRow {

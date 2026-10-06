@@ -14,18 +14,25 @@ import { MIN_ADS_TO_INDEX, PAGE_SIZE } from "@/lib/config";
 import { type ListingQuery, type SearchParams, filterOptions, isRefined, readQuery, toFilterValue } from "@/lib/filters";
 import { formatNumber } from "@/lib/format";
 import { dict } from "@/lib/i18n";
-import { listingAlternates, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle } from "@/lib/seo";
+import { absolute, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle, pageMetadata } from "@/lib/seo";
 import {
   DEALS,
+  FEATURES,
+  type Feature,
+  PRICE_CAPS,
+  PROPERTY_TYPES,
   RENT_PERIODS,
   type ListingParams,
   type RentPeriod,
   categoryIdFor,
   englishIndexable,
   homePath,
+  isPlain,
   listingPath,
   placeName,
   supportsBedrooms,
+  supportsCap,
+  supportsFeature,
   supportsFurnished,
   supportsRentPeriod,
   taxonomyIndex,
@@ -67,10 +74,13 @@ function loadLanding(params: ListingParams, query: ListingQuery, filters: Return
     regionIds: severalRegions ? value.regionIds : undefined,
     bedrooms: value.beds,
     bathrooms: value.baths,
-    furnished: value.furnished === "yes" ? true : value.furnished === "no" ? false : undefined,
-    attrs: facetAttrs(value),
+    furnished: params.feature === "unfurnished" ? false : value.furnished === "yes" ? true : value.furnished === "no" ? false : undefined,
+    owner: params.feature === "owner",
+    instalments: params.feature === "instalments",
+    attrs: [...facetAttrs(value), ...(params.feature === "ground" ? ["floor:الطابق الأرضي"] : [])],
     minPrice: query.minPrice,
-    maxPrice: query.maxPrice,
+    // A ceiling in the page's address, unless the visitor chose a lower one
+    maxPrice: params.cap ? Math.min(params.cap, query.maxPrice ?? params.cap) : query.maxPrice,
     minArea: query.minArea,
     maxArea: query.maxArea,
     sort: query.sort,
@@ -101,13 +111,16 @@ export async function listingMetadata(locale: Locale, params: ListingParams, sea
       : leaf
         ? heading
         : listingTitle(locale, heading, landing.total);
-  return {
+  return pageMetadata({
+    locale,
     title,
-    description: listingDescription(locale, params, landing),
-    alternates: listingAlternates(locale, params, query.page),
-    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
-    openGraph: { title, images: landing.ads[0]?.image ? [landing.ads[0].image] : undefined },
-  };
+    description: listingDescription(locale, params, landing, query.page),
+    arPath: listingPath("ar", params),
+    enPath: englishIndexable(params) ? listingPath("en", params) : null,
+    query: query.page > 1 ? `?page=${query.page}` : "",
+    image: landing.ads[0]?.image,
+    index: indexable,
+  });
 }
 
 export default async function ListingView({
@@ -136,7 +149,9 @@ export default async function ListingView({
   const basePath = listingPath(locale, params);
 
   // Keeps the active refinements when moving between pages
-  const pageHref = (page: number) => buildListingUrl(options, value, page);
+  // Pages whose refinement the filter panel does not know keep their own address between pages
+  const ownAddress = !!(params.feature || params.cap) && !isRefined(query);
+  const pageHref = (page: number) => (ownAddress ? `${basePath}${page > 1 ? `?page=${page}` : ""}` : buildListingUrl(options, value, page));
 
   // Breadcrumbs: each level is a real page
   const dealName = locale === "en" ? `${t.properties} ${DEALS[params.deal].label.en}` : `${t.properties} ${DEALS[params.deal].label.ar}`;
@@ -152,9 +167,10 @@ export default async function ListingView({
   if (params.region) crumbs.push({ name: placeName(params.region, locale), path: listingPath(locale, { deal: params.deal, type: params.type, city: params.city, region: params.region }) });
   if (params.bedrooms || params.furnished) crumbs.push({ name: params.bedrooms ? `${params.bedrooms} ${t.bedrooms}` : t.furnished, path: basePath });
   if (params.period) crumbs.push({ name: RENT_PERIODS[params.period].label[locale], path: basePath });
+  if (params.feature || params.cap) crumbs.push({ name: heading, path: basePath });
 
   // Narrower pages of the same place: each is a page of its own that search engines can reach from here
-  const plain = !params.bedrooms && !params.furnished && !params.period && !filters.deeper;
+  const plain = isPlain(params) && !filters.deeper;
   const narrower: { name: string; count: number; href: string }[] = [];
   if (plain && params.type) {
     const counts = landing.refinements;
@@ -167,6 +183,12 @@ export default async function ListingView({
       for (const period of Object.keys(RENT_PERIODS) as RentPeriod[]) narrow({ period }, counts[period]);
     }
     if (supportsBedrooms(params.type)) for (const { value, count } of landing.bedrooms) narrow({ bedrooms: value }, count);
+    for (const feature of Object.keys(FEATURES) as Feature[]) {
+      if (counts && supportsFeature(feature, params.deal, params.type)) narrow({ feature }, counts[feature] ?? 0);
+    }
+    if (counts?.caps && supportsCap(params.type)) {
+      for (const cap of PRICE_CAPS[params.deal]) narrow({ cap }, counts.caps[String(cap)] ?? 0);
+    }
   }
 
   const nearby = siblings ? siblings.locations : landing.locations;
@@ -184,6 +206,20 @@ export default async function ListingView({
       };
     })
     .filter((link): link is NonNullable<typeof link> => link !== null);
+
+  // The other kinds of property in the same place, so every page of a place leads to the rest of it
+  const related: { name: string; count: number; href: string }[] = [];
+  if (plain) {
+    const counts = new Map((landing.category_counts ?? []).map((entry) => [entry.id, entry.count]));
+    for (const type of PROPERTY_TYPES) {
+      const id = type.ids[params.deal];
+      const count = id !== undefined ? counts.get(id) ?? 0 : 0;
+      if (type.key === params.type?.key || count < MIN_ADS_TO_INDEX) continue;
+      const next: ListingParams = { deal: params.deal, type, city: params.city, region: params.region };
+      related.push({ name: listingHeading(locale, next), count, href: listingPath(locale, next) });
+    }
+    related.sort((a, b) => b.count - a.count);
+  }
 
   const refined = isRefined(query);
   const faqs = query.page === 1 && !refined ? listingFaqs(locale, params, landing) : [];
@@ -294,9 +330,29 @@ export default async function ListingView({
           </nav>
         )}
 
+        {related.length > 0 && query.page === 1 && !refined && (
+          <nav className="mt-12" aria-labelledby="related-title">
+            <h2 id="related-title" className="section-title">
+              {t.related_title(params.region ? placeName(params.region, locale) : placeScope)}
+            </h2>
+            <ul className="mt-5 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="flex items-center justify-between gap-2 border-b border-line py-2.5 text-sm text-body transition hover:text-brand-600">
+                    <span className="truncate">{link.name}</span>
+                    <span className="shrink-0 text-xs text-muted">{formatNumber(link.count)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
         <Faq title={t.faq_title} faqs={faqs} />
         <AppBand locale={locale} />
-        {landing.ads.length > 0 && <JsonLd data={listingJsonLd(locale, heading, landing)} />}
+        {landing.ads.length > 0 && (
+          <JsonLd data={listingJsonLd(locale, heading, landing, params, absolute(basePath) + (query.page > 1 ? `?page=${query.page}` : ""))} />
+        )}
       </div>
     </FiltersProvider>
   );

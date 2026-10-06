@@ -50,7 +50,7 @@ export default function CardGallery({ images, alt, priority, viewer }: Props) {
           <img
             key={src}
             src={index === 0 || touched ? src : undefined}
-            alt={index === 0 ? alt : ""}
+            alt={index === 0 ? alt : `${alt} - ${index + 1}`}
             loading={index === 0 && priority ? "eager" : "lazy"}
             fetchPriority={index === 0 && priority ? "high" : "auto"}
             decoding="async"
