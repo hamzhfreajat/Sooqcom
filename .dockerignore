@@ -1,5 +1,8 @@
 node_modules
-build
+.next
 .git
-.env
-.DS_Store
+.env*
+!.env.example
+Dockerfile
+README.md
+og-service

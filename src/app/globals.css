@@ -1,0 +1,211 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-brand), ui-sans-serif, system-ui, "Segoe UI", Tahoma, sans-serif;
+
+  --color-brand-50: #eff5ff;
+  --color-brand-100: #dbe8ff;
+  --color-brand-200: #bcd4ff;
+  --color-brand-500: #2d6bff;
+  --color-brand-600: #1557f5;
+  --color-brand-700: #0f43c9;
+  --color-brand-900: #0a1f52;
+
+  --color-navy: #071433;
+  --color-ink: #0b1220;
+  --color-body: #2f3a4d;
+  --color-muted: #667085;
+  --color-line: #e6e9ef;
+  --color-surface: #f6f7f9;
+  --color-star: #f5a300;
+  --color-accent: #ff7a1a;
+  --color-success: #0e9f6e;
+  --color-whatsapp: #1fbd5a;
+
+  --shadow-card: 0 1px 2px rgb(11 18 32 / 0.04), 0 2px 8px rgb(11 18 32 / 0.04);
+  --shadow-lift: 0 4px 10px rgb(11 18 32 / 0.05), 0 16px 40px rgb(11 18 32 / 0.1);
+  --shadow-pop: 0 8px 24px rgb(11 18 32 / 0.12), 0 24px 64px rgb(11 18 32 / 0.16);
+}
+
+/* Element defaults live in the base layer so utility classes can override them */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #fff;
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  button,
+  select,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
+@layer components {
+  .container-page {
+    /* Wide screens use the whole width, with a 10px margin on each side */
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-[10px];
+  }
+
+  .card {
+    @apply rounded-2xl border border-line bg-white;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-line disabled:text-muted;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-ink;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-3.5 py-2 text-sm font-medium text-body transition hover:border-ink hover:text-ink;
+  }
+
+  .chip-active {
+    @apply border-ink bg-ink text-white hover:text-white;
+  }
+
+  .field {
+    @apply h-12 w-full rounded-xl border border-line bg-white px-3.5 text-[15px] text-ink placeholder:text-muted focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-ink;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold text-ink sm:text-[28px];
+  }
+
+  .prose-legal h1 {
+    @apply mb-6 text-3xl font-bold;
+  }
+  .prose-legal h2 {
+    @apply mb-3 mt-8 text-xl font-bold;
+  }
+  .prose-legal p,
+  .prose-legal li {
+    @apply leading-8 text-body;
+  }
+  .prose-legal ul {
+    @apply my-3 list-disc space-y-2 ps-6;
+  }
+  .prose-legal ol {
+    @apply my-3 list-decimal space-y-2 ps-6;
+  }
+  .prose-legal a {
+    @apply font-semibold text-brand-600 underline;
+  }
+}
+
+/* Two-handle range: two native sliders stacked on one track; only the handles take the pointer */
+.range-pair input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.range-pair input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.range-pair input[type="range"]::-moz-range-track {
+  background: transparent;
+}
+.range-pair input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--color-brand-600);
+  box-shadow: 0 1px 4px rgb(11 18 32 / 0.2);
+  cursor: grab;
+}
+.range-pair input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--color-brand-600);
+  box-shadow: 0 1px 4px rgb(11 18 32 / 0.2);
+  cursor: grab;
+}
+.range-pair input[type="range"]:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  box-shadow: 0 0 0 6px var(--color-brand-100);
+}
+.range-pair input[type="range"]:focus-visible {
+  outline: none;
+}
+.range-pair input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 6px var(--color-brand-100);
+}
+
+/* A slim scrollbar that only shows while the panel is hovered */
+.slim-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.slim-scroll:hover {
+  scrollbar-color: #c9cfda transparent;
+}
+.slim-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.slim-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+}
+.slim-scroll:hover::-webkit-scrollbar-thumb {
+  background: #c9cfda;
+}
+
+/* Horizontal scrollers without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

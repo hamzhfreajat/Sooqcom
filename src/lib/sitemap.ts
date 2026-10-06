@@ -1,0 +1,103 @@
+import { getSitemapLanding, getTaxonomy } from "./api";
+import { MIN_ADS_TO_INDEX } from "./config";
+import {
+  type ListingParams,
+  dealOfCategory,
+  englishIndexable,
+  listingPath,
+  supportsBedrooms,
+  supportsFurnished,
+  supportsRentPeriod,
+  taxonomyIndex,
+  typeOfCategory,
+} from "./taxonomy";
+import type { Locale } from "./types";
+
+export const ADS_PER_SITEMAP = 5000;
+
+export interface SitemapEntry {
+  path: string;
+  lastModified?: string;
+}
+
+/**
+ * Every listing page that has enough ads to be worth indexing, in one language.
+ * Built from per-(category, city, region, bedrooms, furnished, rent period) counts, rolled up to each page level.
+ */
+export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
+  const [rows, taxonomy] = await Promise.all([getSitemapLanding(), getTaxonomy()]);
+  const index = taxonomyIndex(taxonomy);
+  const pages = new Map<string, { params: ListingParams; count: number; latest: string }>();
+
+  const add = (params: ListingParams, count: number, latest: string | null) => {
+    const key = listingPath("ar", params);
+    const page = pages.get(key);
+    if (page) {
+      page.count += count;
+      if (latest && latest > page.latest) page.latest = latest;
+    } else {
+      pages.set(key, { params, count, latest: latest ?? "" });
+    }
+  };
+
+  for (const row of rows) {
+    const deal = dealOfCategory(row.category_id, taxonomy);
+    if (!deal) continue;
+    const type = typeOfCategory(row.category_id, deal, taxonomy);
+    const city = row.city_id != null ? index.citiesById.get(row.city_id) : undefined;
+    const region = city && row.region_id != null ? index.regionsById.get(row.region_id) : undefined;
+    const bedrooms = row.bedrooms ?? undefined;
+
+    add({ deal }, row.count, row.latest);
+    if (city) add({ deal, city }, row.count, row.latest);
+    if (!type) continue;
+    add({ deal, type }, row.count, row.latest);
+    if (city) add({ deal, type, city }, row.count, row.latest);
+    if (city && region) add({ deal, type, city, region }, row.count, row.latest);
+    if (bedrooms && supportsBedrooms(type)) {
+      add({ deal, type, bedrooms }, row.count, row.latest);
+      if (city) add({ deal, type, city, bedrooms }, row.count, row.latest);
+      if (city && region) add({ deal, type, city, region, bedrooms }, row.count, row.latest);
+    }
+    // "شقق مفروشة للإيجار" and "شقق للإيجار اليومي" are searched as often as the plain pages
+    if (row.furnished && supportsFurnished(deal, type)) {
+      add({ deal, type, furnished: true }, row.count, row.latest);
+      if (city) add({ deal, type, city, furnished: true }, row.count, row.latest);
+      if (city && region) add({ deal, type, city, region, furnished: true }, row.count, row.latest);
+    }
+    if (row.rent_period && supportsRentPeriod(deal, type)) {
+      const period = row.rent_period;
+      add({ deal, type, period }, row.count, row.latest);
+      if (city) add({ deal, type, city, period }, row.count, row.latest);
+      if (city && region) add({ deal, type, city, region, period }, row.count, row.latest);
+    }
+  }
+
+  return [...pages.values()]
+    .filter((page) => page.count >= MIN_ADS_TO_INDEX && (locale === "ar" || englishIndexable(page.params)))
+    .sort((a, b) => b.count - a.count)
+    .map((page) => ({ path: listingPath(locale, page.params), lastModified: page.latest || undefined }));
+}
+
+export function staticEntries(locale: Locale): SitemapEntry[] {
+  const prefix = locale === "en" ? "/en" : "";
+  return [{ path: prefix || "/" }, { path: `${prefix}/about` }, { path: `${prefix}/privacy` }, { path: `${prefix}/delete-data` }];
+}
+
+const escapeXml = (value: string) =>
+  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+export function urlsetXml(entries: { url: string; lastModified?: string }[]): string {
+  const body = entries
+    .map(
+      (entry) =>
+        `<url><loc>${escapeXml(entry.url)}</loc>${entry.lastModified ? `<lastmod>${entry.lastModified.slice(0, 10)}</lastmod>` : ""}</url>`,
+    )
+    .join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</urlset>`;
+}
+
+export function indexXml(urls: string[]): string {
+  const body = urls.map((url) => `<sitemap><loc>${escapeXml(url)}</loc></sitemap>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</sitemapindex>`;
+}

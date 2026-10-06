@@ -1,23 +1,32 @@
-# Build environment
-FROM node:18-alpine as build
+# Website (Next.js) for sooq-com.com. Data comes from the FastAPI backend.
+FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package*.json ./
-# Clean install to ensure exact versions are used
+COPY package.json package-lock.json ./
 RUN npm ci
 
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Set environment variable to ignore ESLint errors during build on production
-ENV DISABLE_ESLINT_PLUGIN=true
-
+ARG NEXT_PUBLIC_SITE_URL=https://sooq-com.com
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+# Read in the browser, so it has to be known when the site is built
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT=standalone
 RUN npm run build
 
-# Production environment
-FROM nginx:alpine
-# Copy built assets from build environment
-COPY --from=build /app/build /usr/share/nginx/html
-
-# Add a custom nginx configuration for React Router
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+FROM node:22-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+RUN addgroup -S app && adduser -S app -G app
+COPY --from=build /app/public ./public
+COPY --from=build --chown=app:app /app/.next/standalone ./
+COPY --from=build --chown=app:app /app/.next/static ./.next/static
+USER app
+EXPOSE 3000
+CMD ["node", "server.js"]

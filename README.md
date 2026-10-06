@@ -1,70 +1,42 @@
-# Getting Started with Create React App
+# Sooqcom website
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Public website for sooq-com.com: real-estate listings in Arabic and English, built for search engines.
+It has no backend of its own. Every page reads from the same FastAPI backend the mobile app uses
+(`/api/web/*`, see `backend/web_router.py`).
 
-## Available Scripts
+## Run locally
 
-In the project directory, you can run:
+```bash
+npm install
+cp .env.example .env.local   # point API_URL at a backend that has /api/web
+npm run dev
+```
 
-### `npm start`
+## Configuration
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+| Variable | Meaning | Default |
+|---|---|---|
+| `API_URL` | FastAPI backend, read at runtime | `https://api.sooq-com.com/api` |
+| `NEXT_PUBLIC_SITE_URL` | Public address of the site, read at build time | `https://sooq-com.com` |
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Deploy
 
-### `npm test`
+Build the `Dockerfile`; the container listens on port 3000.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Address scheme
 
-### `npm run build`
+| Page | Arabic | English |
+|---|---|---|
+| Listing | `/للإيجار/شقق/عمان/خلدا/3-غرف-نوم` | `/en/rent/apartments/amman/khalda/3-bedrooms` |
+| Ad | `/اعلان/{id}-{slug}` | `/en/ad/{id}-{slug}` |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Everything after the deal is optional, in the order type, city, region, one refinement.
+The refinement is a number of bedrooms (`3-غرف-نوم`), or for rentals `مفروشة` (furnished), `يومي` (daily) or `شهري` (monthly).
+Type names follow search demand (see `seo/keyword-planner/merged_keywords.tsv`): `استوديو`, `بيوت`, `سكن-طالبات`, `غرف`.
+The rules live in `src/lib/taxonomy.ts`; sitemaps are generated from the same rules in `src/lib/sitemap.ts`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## What search engines may index
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Listing pages with at least 3 ads (`MIN_ADS_TO_INDEX`), without sort or price parameters.
+- English listing pages only when the city and region have English names in the database.
+- Ad pages in Arabic only (the ad text is Arabic), and only ads with a price, a photo and a real description.
