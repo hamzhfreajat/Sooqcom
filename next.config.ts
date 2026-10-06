@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   // This folder is its own project, even though a parent folder also has a lockfile
   outputFileTracingRoot: path.join(__dirname),
   poweredByHeader: false,
+  // The title, canonical address, robots and language tags are sent inside <head> to every visitor.
+  // By default they are streamed into the page body for browsers and for Googlebot, and a canonical
+  // or robots tag outside <head> is one search engines do not honour.
+  htmlLimitedBots: /.*/,
   async redirects() {
     return [
       // One host only: "www." answers with the same pages otherwise, as a second copy of the whole site
