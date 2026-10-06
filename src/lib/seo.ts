@@ -183,7 +183,17 @@ export function baseMetadata(locale: Locale): Metadata {
     applicationName: SITE_NAME[locale],
     openGraph: { siteName: SITE_NAME[locale], locale: OG_LOCALE[locale], type: "website", images: [DEFAULT_OG_IMAGE] },
     twitter: { card: "summary", images: [DEFAULT_OG_IMAGE.url] },
-    icons: { icon: "/logo.png", apple: "/logo.png" },
+    // A flat mark on a solid colour: it stays readable at the size of a search result's icon,
+    // and fills the circle search engines crop it to
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "48x48" },
+        { url: "/favicon-48.png", type: "image/png", sizes: "48x48" },
+        { url: "/favicon-96.png", type: "image/png", sizes: "96x96" },
+        { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      ],
+      apple: "/apple-touch-icon.png",
+    },
     // Phone numbers in ad text are not turned into links that shift the layout on iPhones
     formatDetection: { telephone: false },
     verification: {
