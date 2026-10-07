@@ -26,7 +26,7 @@ import type { Deal, Locale, PriceGuide } from "@/lib/types";
 /** A guide needs this many areas (or cities) with a price before search engines may index it. */
 const MIN_PLACES_TO_INDEX = 3;
 /** Another guide is only linked when its kind of property has this many ads in the place. */
-const MIN_ADS_FOR_GUIDE = 30;
+const MIN_ADS_FOR_GUIDE = 150;
 
 function load(params: PricesParams): Promise<PriceGuide> {
   return getPrices(categoryIdFor({ deal: params.deal, type: params.type }), params.city?.id).catch((error) => {

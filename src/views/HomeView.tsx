@@ -19,6 +19,8 @@ export function homeMetadata(locale: Locale): Metadata {
 }
 
 const AMMAN_ID = 5;
+/** A city's price guide needs this many ads to have a table worth linking to. */
+const MIN_ADS_FOR_PRICE_LINK = 150;
 
 function HeroPhoto({ ad, locale }: { ad: AdCard; locale: Locale }) {
   return (
@@ -49,10 +51,15 @@ export default async function HomeView({ locale }: { locale: Locale }) {
   // Ads per curated type and per city, from the same counts the sitemap uses
   const typeCounts: Record<Deal, Map<string, number>> = { rent: new Map(), sale: new Map() };
   const cityCounts = new Map<number, number>();
+  // Apartments per city and deal: a price guide is only linked where there are enough ads behind it
+  const apartmentCounts = new Map<string, number>();
   for (const row of counts) {
     for (const deal of ["rent", "sale"] as Deal[]) {
       const type = typeOfCategory(row.category_id, deal, taxonomy);
       if (type) typeCounts[deal].set(type.key, (typeCounts[deal].get(type.key) ?? 0) + row.count);
+      if (type?.key === apartments.key && row.city_id != null) {
+        apartmentCounts.set(`${row.city_id}-${deal}`, (apartmentCounts.get(`${row.city_id}-${deal}`) ?? 0) + row.count);
+      }
     }
     if (row.city_id != null) cityCounts.set(row.city_id, (cityCounts.get(row.city_id) ?? 0) + row.count);
   }
@@ -194,11 +201,12 @@ export default async function HomeView({ locale }: { locale: Locale }) {
           <h2 id="prices-title" className="section-title">{locale === "en" ? "Property prices by area" : "أسعار العقارات حسب المنطقة"}</h2>
           <ul className="mt-5 grid gap-x-6 sm:grid-cols-2">
             {cities
-              .filter(({ city, count }) => count >= 60 && (locale === "ar" || hasEnglishName(city)))
-              .slice(0, 4)
+              .filter(({ city }) => locale === "ar" || hasEnglishName(city))
               .flatMap(({ city }) =>
                 (["rent", "sale"] as Deal[]).map((deal) => ({ key: `${city.id}-${deal}`, params: { deal, type: apartments, city } })),
               )
+              .filter(({ key }) => (apartmentCounts.get(key) ?? 0) >= MIN_ADS_FOR_PRICE_LINK)
+              .slice(0, 8)
               .map(({ key, params }) => (
                 <li key={key}>
                   <Link href={pricesPath(locale, params)} className="block border-b border-line py-2.5 text-sm text-body transition hover:text-brand-600">

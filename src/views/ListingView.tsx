@@ -263,7 +263,7 @@ export default async function ListingView({
                 </div>
                 <ActiveFilters />
                 {/* The typical price of every area, for this kind of property in this city */}
-                {plain && !params.region && params.type && supportsPriceGuide(params.deal, params.type) && landing.total >= 30 && (
+                {plain && !params.region && params.type && supportsPriceGuide(params.deal, params.type) && landing.total >= 150 && (
                   <Link
                     href={pricesPath(locale, { deal: params.deal, type: params.type, city: params.city })}
                     className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:underline"

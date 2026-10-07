@@ -103,7 +103,7 @@ export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
 }
 
 /** A price guide is listed when its kind of property has this many ads in the place. */
-const MIN_ADS_FOR_PRICE_GUIDE = 30;
+const MIN_ADS_FOR_PRICE_GUIDE = 150;
 
 /** Price guides: one per kind of property for the country, and one per city with enough ads. */
 export async function priceEntries(locale: Locale): Promise<SitemapEntry[]> {
