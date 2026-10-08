@@ -50,10 +50,18 @@ export async function GET(request: Request) {
   );
 }
 
-/** Pause, resume, mark as sold, republish or delete one or more of the user's ads. */
+/** Pause, resume, mark as sold, republish or delete one or more of the user's ads, or republish all of them. */
 export async function POST(request: Request) {
   if (!(await getToken())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const body = (await request.json().catch(() => ({}))) as { ids?: number[]; action?: string };
+
+  // Every live ad at once. The server skips ads republished in the last 24 hours and says how many
+  if (body.action === "republish_all") {
+    const response = await accountFetch("/my-ads/republish-all", { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return NextResponse.json({ error: "failed" }, { status: response.status });
+    return NextResponse.json({ ok: true, republished: Number(data.republished) || 0, waiting: Number(data.waiting) || 0 });
+  }
   const ids = (body.ids ?? []).filter((id) => Number.isSafeInteger(id) && id > 0).slice(0, 100);
   if (ids.length === 0 || !ACTIONS.includes(body.action ?? "")) return NextResponse.json({ error: "bad request" }, { status: 400 });
 

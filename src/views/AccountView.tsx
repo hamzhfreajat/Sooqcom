@@ -24,7 +24,9 @@ const TEXT = {
     title: "إعلاناتي", subtitle: "تابع أداء إعلاناتك وأدرها من مكان واحد.", post: "أضف إعلاناً", stats: "مؤشرات الأداء", ads: "الإعلانات", views: "المشاهدات", chats: "المراسلات",
     favorites: "المفضلة", perAd: "لكل إعلان", status: { All: "الكل", Active: "نشط", Uncompleted: "غير مكتمل", Expired: "منتهية", Sold: "مباعة", Paused: "متوقفة", Rejected: "مرفوض" } as Record<string, string>,
     search: "ابحث في إعلاناتك...", empty: "لم تقم بنشر أي إعلانات بعد. ابدأ الآن!", emptyFilter: "لا توجد إعلانات بهذه الحالة.", view: "عرض", pause: "إيقاف", resume: "تفعيل", sold: "تم البيع",
-    republish: "إعادة النشر", remove: "حذف", confirmDelete: "هل تريد حذف هذا الإعلان نهائياً؟", done: "تم تنفيذ العملية بنجاح", failed: "حدث خطأ أثناء التنفيذ",
+    republish: "إعادة النشر", republishAll: "إعادة نشر الكل", confirmRepublishAll: "سيتم رفع جميع إعلاناتك النشطة إلى أعلى القائمة. هل تريد المتابعة؟",
+    republishedAll: (n: number, waiting: number) => `تمت إعادة نشر ${n} إعلان${waiting ? `، و${waiting} أُعيد نشرها خلال آخر 24 ساعة` : ""}`,
+    republishAllWait: "جميع إعلاناتك أُعيد نشرها خلال آخر 24 ساعة. حاول لاحقاً.", remove: "حذف", confirmDelete: "هل تريد حذف هذا الإعلان نهائياً؟", done: "تم تنفيذ العملية بنجاح", failed: "حدث خطأ أثناء التنفيذ",
     already: "هذا الإعلان تم إعادة نشره بالفعل وهو الآن في أعلى القائمة", published: "تاريخ النشر", score: "قوة الإعلان", top: "الأكثر مشاهدة", loginTitle: "سجّل الدخول لعرض إعلاناتك",
     loginBody: "حسابك على الموقع هو نفسه حسابك في التطبيق.", login: "تسجيل الدخول", currency: "د.أ", photos: "صور", reviews: "تقييم", selected: (n: number) => `تم تحديد ${n}`,
     hints: { "Price might be slightly high.": "قد يكون السعر مرتفعاً قليلاً.", "Add more photos to increase trust.": "أضف صوراً أكثر لزيادة الثقة." } as Record<string, string>,
@@ -35,7 +37,9 @@ const TEXT = {
     title: "My ads", subtitle: "Follow how your ads perform and manage them in one place.", post: "Post an ad", stats: "Performance", ads: "Ads", views: "Views", chats: "Chats",
     favorites: "Favourites", perAd: "per ad", status: { All: "All", Active: "Active", Uncompleted: "Incomplete", Expired: "Expired", Sold: "Sold", Paused: "Paused", Rejected: "Rejected" } as Record<string, string>,
     search: "Search your ads…", empty: "You have not posted any ads yet. Start now!", emptyFilter: "No ads with this status.", view: "View", pause: "Pause", resume: "Activate", sold: "Mark as sold",
-    republish: "Republish", remove: "Delete", confirmDelete: "Delete this ad permanently?", done: "Done", failed: "Something went wrong",
+    republish: "Republish", republishAll: "Republish all", confirmRepublishAll: "All your active ads will move to the top of the list. Continue?",
+    republishedAll: (n: number, waiting: number) => `${n} ${n === 1 ? "ad" : "ads"} republished${waiting ? `; ${waiting} were already republished in the last 24 hours` : ""}`,
+    republishAllWait: "All your ads were republished in the last 24 hours. Try again later.", remove: "Delete", confirmDelete: "Delete this ad permanently?", done: "Done", failed: "Something went wrong",
     already: "This ad was already republished and is at the top of the list", published: "Posted", score: "Ad strength", top: "Most viewed", loginTitle: "Sign in to see your ads",
     loginBody: "Your website account is the same as your app account.", login: "Sign in", currency: "JOD", photos: "photos", reviews: "reviews", selected: (n: number) => `${n} selected`,
     hints: {} as Record<string, string>,
@@ -88,6 +92,19 @@ export default function AccountView({ locale }: { locale: Lang }) {
     const timer = setTimeout(() => setToast(""), 4000);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  const republishAll = async () => {
+    if (!window.confirm(t.confirmRepublishAll)) return;
+    setBusy(true);
+    const response = await fetch("/api/account/ads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "republish_all" }) });
+    const data = await response.json().catch(() => ({}));
+    setBusy(false);
+    setToast(!response.ok ? t.failed : data.republished > 0 ? t.republishedAll(data.republished, data.waiting) : t.republishAllWait);
+    if (response.ok && data.republished > 0) {
+      setPicked([]);
+      load(status, search);
+    }
+  };
 
   const act = async (ids: number[], action: string) => {
     if (action === "delete" && !window.confirm(t.confirmDelete)) return;
@@ -231,6 +248,12 @@ export default function AccountView({ locale }: { locale: Lang }) {
               <Icon name="search" size={17} className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-muted" />
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} className="field h-10 ps-10 text-sm" />
             </label>
+            {/* Only worth a button with more than one live ad; a single ad has its own */}
+            {summary !== null && summary.activeAds > 1 && (
+              <button type="button" disabled={busy} onClick={republishAll} className="btn-primary h-10 w-full px-4 text-sm sm:w-auto">
+                <Icon name="refresh" size={16} />{t.republishAll}
+              </button>
+            )}
           </div>
 
           {picked.length > 0 && (
