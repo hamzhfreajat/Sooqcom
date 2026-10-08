@@ -1,7 +1,7 @@
 import { Cairo } from "next/font/google";
 import Script from "next/script";
 import { type ReactNode, Suspense } from "react";
-import { GA_MEASUREMENT_ID, HTML_LANG } from "@/lib/config";
+import { GA_MEASUREMENT_ID, GOOGLE_CLIENT_ID, HTML_LANG } from "@/lib/config";
 import { dict } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
 import Footer from "./Footer";
@@ -21,7 +21,7 @@ export default function SiteShell({ locale, children }: { locale: Locale; childr
   return (
     // Browser extensions add their own attributes to <html> and <body>; those are not hydration errors
     <html lang={HTML_LANG[locale]} dir={dict(locale).dir} className={cairo.variable} suppressHydrationWarning>
-      <body className="min-h-screen" suppressHydrationWarning>
+      <body className="min-h-screen" data-google-client-id={GOOGLE_CLIENT_ID || undefined} suppressHydrationWarning>
         <Suspense fallback={null}>
           <NavProgress />
         </Suspense>

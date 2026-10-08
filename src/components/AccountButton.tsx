@@ -12,7 +12,9 @@ export interface SessionUser {
   phone: string | null;
 }
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+/** The sign-in client id: fixed at build time when given then, otherwise the one the page shell put on <body>. */
+const googleClientId = () =>
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || (typeof document === "undefined" ? "" : document.body.dataset.googleClientId ?? "");
 
 /** Other components open the sign-in dialog with `requestLogin()` and learn about changes through `onSessionChange`. */
 export const requestLogin = () => window.dispatchEvent(new Event("sq:login"));
@@ -65,12 +67,13 @@ export default function AccountButton({ locale }: { locale: Locale }) {
 
   // Google's button is rendered by its own script once the dialog is open
   useEffect(() => {
-    if (!dialog || !GOOGLE_CLIENT_ID) return;
+    const clientId = googleClientId();
+    if (!dialog || !clientId) return;
     let cancelled = false;
     const render = () => {
       if (cancelled || !window.google || !googleButton.current) return;
       window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
+        client_id: clientId,
         callback: async ({ credential }: { credential: string }) => {
           setError("");
           const response = await fetch("/api/auth/google", {
@@ -175,7 +178,7 @@ export default function AccountButton({ locale }: { locale: Locale }) {
             <h2 className="mt-4 text-xl font-bold">{t.login_title}</h2>
             <p className="mt-2 text-sm leading-6 text-muted">{t.login_body}</p>
             <div className="mt-6 flex min-h-11 justify-center">
-              {GOOGLE_CLIENT_ID ? <div ref={googleButton} /> : <p className="rounded-xl bg-surface px-4 py-3 text-sm text-body">{t.login_unavailable}</p>}
+              {googleClientId() ? <div ref={googleButton} /> : <p className="rounded-xl bg-surface px-4 py-3 text-sm text-body">{t.login_unavailable}</p>}
             </div>
             {error && <p className="mt-4 text-sm font-medium text-red-600">{error}</p>}
             <button type="button" onClick={() => setDialog(false)} className="mt-6 text-sm font-semibold text-muted hover:text-ink">

@@ -19,8 +19,16 @@ export const SUPPORT_EMAIL = "support@sooq-com.com";
 /** Ownership codes from Google Search Console and Bing Webmaster Tools ("HTML tag" method). Empty until set. */
 export const GOOGLE_SITE_VERIFICATION = process.env.GOOGLE_SITE_VERIFICATION || "";
 export const BING_SITE_VERIFICATION = process.env.BING_SITE_VERIFICATION || "";
+/**
+ * A setting as the running server sees it. `process.env.NEXT_PUBLIC_X` written out in full is fixed
+ * when the site is built; looked up by name it is read when the server starts, so the host can
+ * change it without a build argument. Empty in the browser.
+ */
+const serverSetting = (name: string) => (typeof window === "undefined" ? process.env[name] || "" : "");
 /** Google Analytics 4 measurement id ("G-XXXXXXX"). Nothing is loaded while it is empty. */
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "";
+export const GA_MEASUREMENT_ID = serverSetting("NEXT_PUBLIC_GA_ID") || process.env.NEXT_PUBLIC_GA_ID || "";
+/** Google sign-in client id. The page shell hands it to the browser, where the sign-in button reads it. */
+export const GOOGLE_CLIENT_ID = serverSetting("NEXT_PUBLIC_GOOGLE_CLIENT_ID") || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 export const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.sooqcom.app";
 export const APP_STORE_URL = "https://apps.apple.com/app/sooqcom-%D8%B3%D9%88%D9%82%D9%83%D9%85/id6785620545";
