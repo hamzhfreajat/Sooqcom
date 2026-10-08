@@ -25,8 +25,14 @@ export const BING_SITE_VERIFICATION = process.env.BING_SITE_VERIFICATION || "";
  * change it without a build argument. Empty in the browser.
  */
 const serverSetting = (name: string) => (typeof window === "undefined" ? process.env[name] || "" : "");
-/** Google Analytics 4 measurement id ("G-XXXXXXX"). Nothing is loaded while it is empty. */
-export const GA_MEASUREMENT_ID = serverSetting("NEXT_PUBLIC_GA_ID") || process.env.NEXT_PUBLIC_GA_ID || "";
+/**
+ * Google Analytics 4 measurement ids ("G-XXXXXXX"). The setting takes one id, or several separated by
+ * commas when the site reports to more than one property. Nothing is loaded while it is empty.
+ */
+export const GA_MEASUREMENT_IDS = (serverSetting("NEXT_PUBLIC_GA_ID") || process.env.NEXT_PUBLIC_GA_ID || "")
+  .split(",")
+  .map((id) => id.trim())
+  .filter((id) => /^G-[A-Z0-9]+$/.test(id));
 /** Google sign-in client id. The page shell hands it to the browser, where the sign-in button reads it. */
 export const GOOGLE_CLIENT_ID = serverSetting("NEXT_PUBLIC_GOOGLE_CLIENT_ID") || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 

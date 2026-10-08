@@ -1,7 +1,7 @@
 import { Cairo } from "next/font/google";
 import Script from "next/script";
 import { type ReactNode, Suspense } from "react";
-import { GA_MEASUREMENT_ID, GOOGLE_CLIENT_ID, HTML_LANG } from "@/lib/config";
+import { GA_MEASUREMENT_IDS, GOOGLE_CLIENT_ID, HTML_LANG } from "@/lib/config";
 import { dict } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
 import Footer from "./Footer";
@@ -29,11 +29,11 @@ export default function SiteShell({ locale, children }: { locale: Locale; childr
         <main>{children}</main>
         <Footer locale={locale} />
         {/* Loaded after the page is usable, and only when a measurement id is configured */}
-        {/^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID) && (
+        {GA_MEASUREMENT_IDS.length > 0 && (
           <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`} strategy="afterInteractive" />
             <Script id="ga" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`}
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());${GA_MEASUREMENT_IDS.map((id) => `gtag('config','${id}');`).join("")}`}
             </Script>
           </>
         )}
