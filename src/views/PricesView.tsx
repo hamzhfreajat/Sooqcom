@@ -18,13 +18,14 @@ import {
   listingPath,
   placeName,
   pricesPath,
+  supportsPriceGuide,
   supportsBedrooms,
   taxonomyIndex,
 } from "@/lib/taxonomy";
 import type { Deal, Locale, PriceGuide } from "@/lib/types";
 
 /** A guide needs this many areas (or cities) with a price before search engines may index it. */
-const MIN_PLACES_TO_INDEX = 3;
+const MIN_PLACES_TO_INDEX = 2;
 /** Another guide is only linked when its kind of property has this many ads in the place. */
 const MIN_ADS_FOR_GUIDE = 150;
 
@@ -116,11 +117,11 @@ export default async function PricesView({ locale, params }: { locale: Locale; p
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  const others = PRICE_GUIDE_TYPES.filter((type) => type.key !== params.type.key && adsOf(params.deal, type.ids[params.deal]) >= MIN_ADS_FOR_GUIDE).map((type) => ({
+  const others = PRICE_GUIDE_TYPES.filter((type) => type.key !== params.type.key && supportsPriceGuide(params.deal, type) && adsOf(params.deal, type.ids[params.deal]) >= MIN_ADS_FOR_GUIDE).map((type) => ({
     name: pricesHeading(locale, { ...params, type }),
     href: pricesPath(locale, { ...params, type }),
   }));
-  if (adsOf(otherDeal, params.type.ids[otherDeal]) >= MIN_ADS_FOR_GUIDE) {
+  if (supportsPriceGuide(otherDeal, params.type) && adsOf(otherDeal, params.type.ids[otherDeal]) >= MIN_ADS_FOR_GUIDE) {
     others.unshift({ name: pricesHeading(locale, { ...params, deal: otherDeal }), href: pricesPath(locale, { ...params, deal: otherDeal }) });
   }
 

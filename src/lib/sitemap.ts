@@ -9,6 +9,7 @@ import {
   englishIndexable,
   listingPath,
   pricesPath,
+  rentalHomesType,
   supportsBedrooms,
   supportsCap,
   supportsFeature,
@@ -50,50 +51,54 @@ export async function listingEntries(locale: Locale): Promise<SitemapEntry[]> {
   for (const row of rows) {
     const deal = dealOfCategory(row.category_id, taxonomy);
     if (!deal) continue;
-    const type = typeOfCategory(row.category_id, deal, taxonomy);
     const city = row.city_id != null ? index.citiesById.get(row.city_id) : undefined;
     const region = city && row.region_id != null ? index.regionsById.get(row.region_id) : undefined;
     const bedrooms = row.bedrooms ?? undefined;
 
     add({ deal }, row.count, row.latest);
     if (city) add({ deal, city }, row.count, row.latest);
-    if (!type) continue;
-    add({ deal, type }, row.count, row.latest);
-    if (city) add({ deal, type, city }, row.count, row.latest);
-    if (city && region) add({ deal, type, city, region }, row.count, row.latest);
-    if (bedrooms && supportsBedrooms(type)) {
-      add({ deal, type, bedrooms }, row.count, row.latest);
-      if (city) add({ deal, type, city, bedrooms }, row.count, row.latest);
-      if (city && region) add({ deal, type, city, region, bedrooms }, row.count, row.latest);
-    }
-    // "شقق مفروشة للإيجار" and "شقق للإيجار اليومي" are searched as often as the plain pages
-    if (row.furnished && supportsFurnished(deal, type)) {
-      add({ deal, type, furnished: true }, row.count, row.latest);
-      if (city) add({ deal, type, city, furnished: true }, row.count, row.latest);
-      if (city && region) add({ deal, type, city, region, furnished: true }, row.count, row.latest);
-    }
-    if (row.rent_period && supportsRentPeriod(deal, type)) {
-      const period = row.rent_period;
-      add({ deal, type, period }, row.count, row.latest);
-      if (city) add({ deal, type, city, period }, row.count, row.latest);
-      if (city && region) add({ deal, type, city, region, period }, row.count, row.latest);
+    // A residential rental counts on its own type's pages and on the "بيوت للإيجار" pages
+    for (const type of [typeOfCategory(row.category_id, deal, taxonomy), rentalHomesType(row.category_id, deal, taxonomy)]) {
+      if (!type) continue;
+      add({ deal, type }, row.count, row.latest);
+      if (city) add({ deal, type, city }, row.count, row.latest);
+      if (city && region) add({ deal, type, city, region }, row.count, row.latest);
+      if (bedrooms && supportsBedrooms(type)) {
+        add({ deal, type, bedrooms }, row.count, row.latest);
+        if (city) add({ deal, type, city, bedrooms }, row.count, row.latest);
+        if (city && region) add({ deal, type, city, region, bedrooms }, row.count, row.latest);
+      }
+      // "شقق مفروشة للإيجار" and "شقق للإيجار اليومي" are searched as often as the plain pages
+      if (row.furnished && supportsFurnished(deal, type)) {
+        add({ deal, type, furnished: true }, row.count, row.latest);
+        if (city) add({ deal, type, city, furnished: true }, row.count, row.latest);
+        if (city && region) add({ deal, type, city, region, furnished: true }, row.count, row.latest);
+      }
+      if (row.rent_period && supportsRentPeriod(deal, type)) {
+        const period = row.rent_period;
+        add({ deal, type, period }, row.count, row.latest);
+        if (city) add({ deal, type, city, period }, row.count, row.latest);
+        if (city && region) add({ deal, type, city, region, period }, row.count, row.latest);
+      }
     }
   }
 
   // "من المالك", "فارغة", "بالتقسيط", "طابق أرضي" and the price ceilings
   for (const row of features) {
     const deal = dealOfCategory(row.category_id, taxonomy);
-    const type = deal ? typeOfCategory(row.category_id, deal, taxonomy) : undefined;
-    if (!deal || !type) continue;
+    if (!deal) continue;
     const cap = row.feature.startsWith("cap:") ? Number(row.feature.slice(4)) : undefined;
     const feature = cap === undefined && row.feature in FEATURES ? (row.feature as Feature) : undefined;
-    if (cap !== undefined ? !(supportsCap(type) && PRICE_CAPS[deal].includes(cap)) : !(feature && supportsFeature(feature, deal, type))) continue;
     const city = row.city_id != null ? index.citiesById.get(row.city_id) : undefined;
     const region = city && row.region_id != null ? index.regionsById.get(row.region_id) : undefined;
     const extra = cap !== undefined ? { cap } : { feature };
-    add({ deal, type, ...extra }, row.count, row.latest);
-    if (city) add({ deal, type, city, ...extra }, row.count, row.latest);
-    if (city && region) add({ deal, type, city, region, ...extra }, row.count, row.latest);
+    for (const type of [typeOfCategory(row.category_id, deal, taxonomy), rentalHomesType(row.category_id, deal, taxonomy)]) {
+      if (!type) continue;
+      if (cap !== undefined ? !(supportsCap(type) && PRICE_CAPS[deal].includes(cap)) : !(feature && supportsFeature(feature, deal, type))) continue;
+      add({ deal, type, ...extra }, row.count, row.latest);
+      if (city) add({ deal, type, city, ...extra }, row.count, row.latest);
+      if (city && region) add({ deal, type, city, region, ...extra }, row.count, row.latest);
+    }
   }
 
   return [...pages.values()]

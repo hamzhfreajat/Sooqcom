@@ -29,12 +29,17 @@ export interface PropertyType {
   masculine?: boolean;
 }
 
+/** "سكني" under rentals: apartments, studios, houses, villas, roofs, duplexes and full floors. */
+const RESIDENTIAL_RENT_ID = 310;
+
 // Names and addresses follow the words people type into search engines
 // ("استوديو للايجار", "بيوت للايجار", "سكن طالبات"), not the app's category names.
 export const PROPERTY_TYPES: PropertyType[] = [
   { key: "apartments", ids: { rent: 301, sale: 10301 }, slug: { ar: "شقق", en: "apartments" }, label: { ar: "شقق", en: "Apartments" }, icon: "building" },
   { key: "studios", ids: { rent: 302, sale: 10302 }, slug: { ar: "استوديو", en: "studios" }, label: { ar: "استوديو", en: "Studios" }, icon: "door", masculine: true },
-  { key: "houses", ids: { rent: 3102, sale: 10102 }, slug: { ar: "بيوت", en: "houses" }, label: { ar: "بيوت", en: "Houses" }, icon: "home" },
+  // To rent, "بيت" means a home of any kind ("بيوت للايجار في الزرقاء" is a search for flats as much as
+  // for houses), so the rental page holds every residential rental. For sale it is a standalone house.
+  { key: "houses", ids: { rent: RESIDENTIAL_RENT_ID, sale: 10102 }, slug: { ar: "بيوت", en: "houses" }, label: { ar: "بيوت", en: "Houses" }, icon: "home" },
   { key: "villas", ids: { rent: 3101, sale: 10101 }, slug: { ar: "فلل", en: "villas" }, label: { ar: "فلل وقصور", en: "Villas" }, icon: "villa" },
   { key: "lands", ids: { sale: 10313 }, slug: { ar: "أراضي", en: "lands" }, label: { ar: "أراضي", en: "Lands" }, icon: "land" },
   { key: "duplex", ids: { rent: 3103, sale: 10103 }, slug: { ar: "دوبلكس", en: "duplex" }, label: { ar: "دوبلكس وبنتهاوس", en: "Duplexes & Penthouses" }, icon: "layers", masculine: true },
@@ -196,6 +201,24 @@ export function typeOfCategory(categoryId: number, deal: Deal, taxonomy: Taxonom
   return undefined;
 }
 
+/**
+ * The "بيوت للإيجار" pages hold every residential rental, so an ad of another residential
+ * type (a flat, a roof) is counted there as well as on its own type's page. Returns that
+ * extra type, or nothing when the ad is not a residential rental or is already a "house".
+ */
+export function rentalHomesType(categoryId: number, deal: Deal, taxonomy: Taxonomy): PropertyType | undefined {
+  if (deal !== "rent" || typeOfCategory(categoryId, deal, taxonomy)?.key === "houses") return undefined;
+  const { parents } = taxonomyIndex(taxonomy);
+  let current: number | null | undefined = categoryId;
+  const seen = new Set<number>();
+  while (current != null && !seen.has(current)) {
+    seen.add(current);
+    if (current === RESIDENTIAL_RENT_ID) return PROPERTY_TYPES.find((type) => type.key === "houses");
+    current = parents.get(current);
+  }
+  return undefined;
+}
+
 /** Whether a backend category is under rentals or sales. */
 export function dealOfCategory(categoryId: number, taxonomy: Taxonomy): Deal | undefined {
   const { parents } = taxonomyIndex(taxonomy);
@@ -285,7 +308,9 @@ export const PRICES_SEGMENT: Record<Locale, string> = { ar: "اسعار", en: "p
 const PRICE_GUIDE_KEYS = ["apartments", "studios", "houses", "villas", "lands"];
 /** The kinds of property with enough ads, and enough people asking, for a price guide. */
 export const PRICE_GUIDE_TYPES = PROPERTY_TYPES.filter((type) => PRICE_GUIDE_KEYS.includes(type.key));
-export const supportsPriceGuide = (deal: Deal, type?: PropertyType) => !!type && PRICE_GUIDE_KEYS.includes(type.key) && type.ids[deal] !== undefined;
+// No guide for rental "houses": that page is all residential rentals, so its prices would repeat the apartments guide
+export const supportsPriceGuide = (deal: Deal, type?: PropertyType) =>
+  !!type && PRICE_GUIDE_KEYS.includes(type.key) && type.ids[deal] !== undefined && !(deal === "rent" && type.key === "houses");
 
 export interface PricesParams {
   deal: Deal;
@@ -303,7 +328,7 @@ export function pricesPath(locale: Locale, params: PricesParams): string {
 export function resolvePrices(locale: Locale, segments: string[], taxonomy: Taxonomy): PricesParams | null {
   if (segments[0] !== PRICES_SEGMENT[locale] || segments.length < 3 || segments.length > 4) return null;
   const deal = dealFromSlug(segments[1], locale);
-  const type = deal ? PRICE_GUIDE_TYPES.find((t) => t.slug[locale] === segments[2] && t.ids[deal] !== undefined) : undefined;
+  const type = deal ? PRICE_GUIDE_TYPES.find((t) => t.slug[locale] === segments[2] && supportsPriceGuide(deal, t)) : undefined;
   if (!deal || !type) return null;
   if (segments.length === 3) return { deal, type };
   const city = taxonomyIndex(taxonomy).citiesBySlug[locale].get(segments[3]);

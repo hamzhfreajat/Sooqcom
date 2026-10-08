@@ -10,7 +10,7 @@ import { getLanding, getSitemapLanding, getTaxonomy } from "@/lib/api";
 import { adLocation, formatNumber, formatPrice } from "@/lib/format";
 import { dict } from "@/lib/i18n";
 import { organizationJsonLd, pageMetadata, pricesHeading, websiteJsonLd } from "@/lib/seo";
-import { DEALS, adPath, hasEnglishName, listingPath, placeName, placeSlug, pricesPath, taxonomyIndex, typeOfCategory, typesForDeal } from "@/lib/taxonomy";
+import { DEALS, adPath, hasEnglishName, listingPath, placeName, placeSlug, pricesPath, rentalHomesType, taxonomyIndex, typeOfCategory, typesForDeal } from "@/lib/taxonomy";
 import type { AdCard, Deal, Locale } from "@/lib/types";
 
 export function homeMetadata(locale: Locale): Metadata {
@@ -57,6 +57,8 @@ export default async function HomeView({ locale }: { locale: Locale }) {
     for (const deal of ["rent", "sale"] as Deal[]) {
       const type = typeOfCategory(row.category_id, deal, taxonomy);
       if (type) typeCounts[deal].set(type.key, (typeCounts[deal].get(type.key) ?? 0) + row.count);
+      const homes = rentalHomesType(row.category_id, deal, taxonomy);
+      if (homes) typeCounts[deal].set(homes.key, (typeCounts[deal].get(homes.key) ?? 0) + row.count);
       if (type?.key === apartments.key && row.city_id != null) {
         apartmentCounts.set(`${row.city_id}-${deal}`, (apartmentCounts.get(`${row.city_id}-${deal}`) ?? 0) + row.count);
       }
