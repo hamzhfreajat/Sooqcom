@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import AdRowCard from "@/components/AdRowCard";
 import Icon from "@/components/Icon";
 import Pagination from "@/components/Pagination";
+import SmartNotes from "@/components/SmartNotes";
 import SmartSearch from "@/components/SmartSearch";
 import { getLanding, getTaxonomy } from "@/lib/api";
 import { PAGE_SIZE } from "@/lib/config";
@@ -95,6 +96,9 @@ export default async function SearchView({ locale, searchParams }: { locale: Loc
             ))}
           </ul>
         )}
+        <div className="mt-4">
+          <SmartNotes locale={locale} notes={query.notes} />
+        </div>
       </header>
 
       {landing.ads.length > 0 ? (

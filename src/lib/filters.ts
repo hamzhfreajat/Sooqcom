@@ -17,6 +17,10 @@ import type { Deal, Locale, Taxonomy } from "./types";
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const SORTS = ["newest", "price_asc", "price_desc"] as const;
+
+/** What smart search gave up to find results, passed as ?sn=region,floor so the page can say so. */
+export const SMART_NOTES = ["region", "missing", "floor", "price", "area", "features"] as const;
+export type SmartNote = (typeof SMART_NOTES)[number];
 export type Sort = (typeof SORTS)[number];
 
 export interface ListingQuery {
@@ -35,6 +39,8 @@ export interface ListingQuery {
   facets?: Record<string, number[]>;
   /** The sentence typed into smart search, shown back to the user */
   q?: string;
+  /** Filters smart search had to drop or widen */
+  notes?: SmartNote[];
 }
 
 const first = (searchParams: SearchParams, key: string) =>
@@ -76,6 +82,7 @@ export function readQuery(searchParams: SearchParams): ListingQuery {
     maxArea: positive("amax"),
     facets: Object.keys(facets).length ? facets : undefined,
     q: first(searchParams, "q")?.slice(0, 300),
+    notes: (first(searchParams, "sn") ?? "").split(",").filter((code): code is SmartNote => (SMART_NOTES as readonly string[]).includes(code)),
   };
 }
 

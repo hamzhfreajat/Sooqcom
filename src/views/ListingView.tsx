@@ -9,6 +9,7 @@ import { buildListingUrl, categoryPath, facetAttrs } from "@/components/filters/
 import Icon from "@/components/Icon";
 import JsonLd from "@/components/JsonLd";
 import Pagination from "@/components/Pagination";
+import SmartNotes from "@/components/SmartNotes";
 import { getLanding, getTaxonomy } from "@/lib/api";
 import { MIN_ADS_TO_INDEX, PAGE_SIZE } from "@/lib/config";
 import { type ListingQuery, type SearchParams, filterOptions, isRefined, readQuery, toFilterValue } from "@/lib/filters";
@@ -319,6 +320,8 @@ export default async function ListingView({
                   </span>
                 </p>
               )}
+
+              <SmartNotes locale={locale} notes={query.notes} />
 
               {landing.ads.length > 0 ? (
                 <>
