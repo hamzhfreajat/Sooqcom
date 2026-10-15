@@ -12,9 +12,9 @@ import Pagination from "@/components/Pagination";
 import { getLanding, getTaxonomy } from "@/lib/api";
 import { MIN_ADS_TO_INDEX, PAGE_SIZE } from "@/lib/config";
 import { type ListingQuery, type SearchParams, filterOptions, isRefined, readQuery, toFilterValue } from "@/lib/filters";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, shortPrice, timeAgo } from "@/lib/format";
 import { dict } from "@/lib/i18n";
-import { absolute, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle, pageMetadata, pricesHeading } from "@/lib/seo";
+import { absolute, hasComparablePrices, listingDescription, listingFaqs, listingHeading, listingJsonLd, listingTitle, pageMetadata, pricesHeading, typicalRange } from "@/lib/seo";
 import {
   DEALS,
   FEATURES,
@@ -117,7 +117,7 @@ export async function listingMetadata(locale: Locale, params: ListingParams, sea
       ? `${heading} - ${dict(locale).page_of(query.page, Math.max(1, Math.ceil(landing.total / PAGE_SIZE)))}`
       : leaf
         ? heading
-        : listingTitle(locale, heading, landing.total);
+        : listingTitle(locale, heading, landing.total, hasComparablePrices(params, landing) ? typicalRange(landing.stats)?.low : null);
   return pageMetadata({
     locale,
     title,
@@ -232,6 +232,13 @@ export default async function ListingView({
   const faqs = query.page === 1 && !refined ? listingFaqs(locale, params, landing) : [];
   const placeScope = params.city ? placeName(params.city, locale) : t.jordan;
 
+  // The page's market at a glance: what a visitor arriving from a search wants to know first
+  const stats = hasComparablePrices(params, landing) ? landing.stats : null;
+  const range = typicalRange(stats);
+  const perMonth = params.deal === "rent" ? (locale === "en" ? " / month" : " شهرياً") : "";
+  // Only in the default order (newest first) is the newest ad on the first page
+  const newest = query.sort !== "newest" || query.page > 1 ? null : landing.ads.reduce<string | null>((latest, ad) => (ad.created_at && (!latest || ad.created_at > latest) ? ad.created_at : latest), null);
+
   return (
     <FiltersProvider
       options={options}
@@ -257,10 +264,38 @@ export default async function ListingView({
                     <h1 className="text-xl font-bold leading-snug sm:text-2xl">{heading}</h1>
                     <p className="text-sm text-muted">
                       <span className="font-bold text-ink">{formatNumber(landing.total)}</span> {t.results_in}
+                      {newest && (
+                        <>
+                          <span className="mx-1.5 text-line">|</span>
+                          {locale === "en" ? "Newest listing: " : "آخر إعلان: "}
+                          <span className="font-bold text-ink">{timeAgo(newest, locale)}</span>
+                        </>
+                      )}
                     </p>
                   </div>
                   <SortSelect />
                 </div>
+                {stats && (
+                  <dl className="mt-3 flex flex-wrap gap-2 text-sm">
+                    <div className="rounded-xl bg-brand-50 px-3 py-1.5">
+                      <dt className="inline text-muted">{locale === "en" ? "Median price: " : "السعر الوسيط: "}</dt>
+                      <dd className="inline font-bold text-brand-900">
+                        {shortPrice(stats.median as number, locale)}
+                        {perMonth}
+                      </dd>
+                    </div>
+                    {range && (
+                      <div className="rounded-xl bg-surface px-3 py-1.5">
+                        <dt className="inline text-muted">{locale === "en" ? "Most listings: " : "معظم الإعلانات بين "}</dt>
+                        <dd className="inline font-bold text-ink">
+                          {locale === "en"
+                            ? `${shortPrice(range.low, locale)} – ${shortPrice(range.high, locale)}`
+                            : `${shortPrice(range.low, locale)} و${shortPrice(range.high, locale)}`}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
                 <ActiveFilters />
                 {/* The typical price of every area, for this kind of property in this city */}
                 {plain && !params.region && params.type && supportsPriceGuide(params.deal, params.type) && landing.total >= 150 && (

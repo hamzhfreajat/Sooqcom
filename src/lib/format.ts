@@ -14,6 +14,18 @@ export function formatPrice(value: number | null | undefined, locale: Locale): s
   return locale === "en" ? `${t.currency} ${formatNumber(value)}` : `${formatNumber(value)} ${t.currency}`;
 }
 
+/**
+ * A price as people search for it: "150 دينار", "32.5 ألف دينار", "1.2 مليون دينار" / "JOD 32,500".
+ * Written "دينار", not "د.أ": it is the word in the searches ("شقق للايجار 150 دينار").
+ */
+export function shortPrice(value: number, locale: Locale): string {
+  if (locale === "en") return formatPrice(value, locale);
+  const trim = (n: number) => String(Math.round(n * 10) / 10);
+  if (value >= 1_000_000) return `${trim(value / 1_000_000)} مليون دينار`;
+  if (value >= 1000) return `${trim(value / 1000)} ألف دينار`;
+  return `${formatNumber(value)} دينار`;
+}
+
 /** "شهرياً" / "سنوياً" for rentals, empty for sales. */
 export function pricePeriod(price: number | null, deal: Deal | null, locale: Locale): string {
   if (deal !== "rent" || price == null) return "";
@@ -43,7 +55,11 @@ export function timeAgo(iso: string | null, locale: Locale): string {
   if (days === 2) return "قبل يومين";
   if (days < 11) return `قبل ${days} أيام`;
   if (days < 30) return `قبل ${days} يوماً`;
-  if (days < 365) return `قبل ${Math.floor(days / 30)} شهر`;
+  if (days < 365) {
+    const months = Math.floor(days / 30);
+    // "قبل شهر"، "قبل شهرين"، "قبل 3 أشهر"، "قبل 11 شهراً"
+    return months === 1 ? "قبل شهر" : months === 2 ? "قبل شهرين" : months <= 10 ? `قبل ${months} أشهر` : `قبل ${months} شهراً`;
+  }
   return `قبل ${Math.floor(days / 365)} سنة`;
 }
 

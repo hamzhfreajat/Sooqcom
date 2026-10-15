@@ -12,7 +12,7 @@ import {
   SITE_URL,
   SUPPORT_EMAIL,
 } from "./config";
-import { formatNumber, formatPrice, plainText } from "./format";
+import { formatNumber, formatPrice, plainText, shortPrice } from "./format";
 import { dict } from "./i18n";
 import {
   DEALS,
@@ -101,12 +101,38 @@ export function pricesHeading(locale: Locale, params: PricesParams): string {
 }
 
 /**
- * The page title shown in search results: the phrase people search for, then the
- * number of ads, which is what makes a result worth clicking.
+ * The page title shown in search results: the phrase people search for, then the number
+ * of ads and the price they start from. Many searches carry a budget ("شقق للايجار 150 دينار"),
+ * and a price in the title is what makes a result worth clicking.
+ * `from` is the low end of the typical range (10th percentile), so ads at that price exist.
  */
-export function listingTitle(locale: Locale, heading: string, total: number): string {
+export function listingTitle(locale: Locale, heading: string, total: number, from?: number | null): string {
   if (total < 5) return heading;
+  if (from) {
+    return locale === "en"
+      ? `${heading} - ${formatNumber(total)} Listings from ${shortPrice(from, "en")}`
+      : `${heading} - ${formatNumber(total)} إعلان من ${shortPrice(from, "ar")}`;
+  }
   return locale === "en" ? `${heading} - ${formatNumber(total)} Listings with Prices` : `${heading} - ${formatNumber(total)} إعلان بالصور والأسعار`;
+}
+
+/**
+ * Whether the page's price figures describe one kind of thing: a single property type, and not
+ * daily lets (priced per night) or a price ceiling already in the heading.
+ */
+export function hasComparablePrices(params: ListingParams, landing: Landing): boolean {
+  const stats = landing.stats;
+  return !!params.type && params.period !== "daily" && !params.cap && !!stats && stats.count >= 5 && stats.median != null;
+}
+
+/**
+ * The typical price range, when it can be trusted. Nightly prices sit among monthly rents
+ * (Aqaba's 10th percentile is 25 against a median of 350), and a title saying "من 25 دينار"
+ * would mislead, so a range far from the median is not shown.
+ */
+export function typicalRange(stats: Landing["stats"]): { low: number; high: number } | null {
+  if (!stats || stats.median == null || stats.low == null || stats.high == null) return null;
+  return stats.low >= stats.median * 0.4 && stats.high <= stats.median * 3 ? { low: stats.low, high: stats.high } : null;
 }
 
 export function listingDescription(locale: Locale, params: ListingParams, landing: Landing, page = 1): string {

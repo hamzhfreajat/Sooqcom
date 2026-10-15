@@ -92,11 +92,15 @@ export function slugifyName(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
+// Aqaba's numbered zones are stored as "السكنية 9 (التاسعة)" but searched as "العقبة التاسعة" or "المنطقة التاسعة"
+const NUMBERED_ZONE = /^السكنية (\d+) \((.+)\)$/;
+
 export function placeName(place: City, locale: Locale): string {
   if (locale === "en" && isLatin(place.name_en)) {
     return place.name_en.replace(/\b[a-z]/g, (c) => c.toUpperCase());
   }
-  return place.name_ar;
+  const zone = NUMBERED_ZONE.exec(place.name_ar);
+  return zone ? `المنطقة ${zone[2]} (السكنية ${zone[1]})` : place.name_ar;
 }
 
 export function placeSlug(place: City, locale: Locale): string {
