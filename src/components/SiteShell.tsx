@@ -4,6 +4,7 @@ import { type ReactNode, Suspense } from "react";
 import { GA_MEASUREMENT_IDS, GOOGLE_CLIENT_ID, HTML_LANG } from "@/lib/config";
 import { dict } from "@/lib/i18n";
 import type { Locale } from "@/lib/types";
+import AdImpressions from "./AdImpressions";
 import Footer from "./Footer";
 import Header from "./Header";
 import NavProgress from "./NavProgress";
@@ -28,6 +29,8 @@ export default function SiteShell({ locale, children }: { locale: Locale; childr
         <Header locale={locale} />
         <main>{children}</main>
         <Footer locale={locale} />
+        {/* Counts the ads seen in lists, as the app does */}
+        <AdImpressions />
         {/* Loaded after the page is usable, and only when a measurement id is configured */}
         {GA_MEASUREMENT_IDS.length > 0 && (
           <>

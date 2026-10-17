@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AdCardView from "@/components/AdCardView";
+import AdSeen from "@/components/AdSeen";
 import AppBand from "@/components/AppBand";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import ContactBox from "@/components/ContactBox";
@@ -96,6 +97,7 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
 
   return (
     <div className="container-page py-6">
+      <AdSeen adId={ad.id} />
       <Breadcrumbs items={crumbs} label={t.home} />
 
       <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -195,6 +197,7 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
             )}
             <hr className="my-5 border-line" />
             <ContactBox
+              adId={ad.id}
               phone={ad.phone}
               appUrl={`${SHARE_URL}/ad/${ad.id}`}
               labels={{ title: t.contact_title, showNumber: t.show_number, whatsapp: t.whatsapp, openInApp: t.open_in_app }}

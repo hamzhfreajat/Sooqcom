@@ -34,7 +34,7 @@ export default function AdRowCard({ ad, locale, priority = false }: { ad: AdCard
   ].filter(Boolean) as { icon: string; text: string }[];
 
   return (
-    <article className="group overflow-hidden rounded-[20px] border border-line bg-white shadow-card transition duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift md:grid md:h-[264px] md:grid-cols-[300px_minmax(0,1fr)_216px] md:grid-rows-[minmax(0,1fr)_auto] xl:grid-cols-[340px_minmax(0,1fr)_232px]">
+    <article data-ad-id={ad.id} className="group overflow-hidden rounded-[20px] border border-line bg-white shadow-card transition duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift md:grid md:h-[264px] md:grid-cols-[300px_minmax(0,1fr)_216px] md:grid-rows-[minmax(0,1fr)_auto] xl:grid-cols-[340px_minmax(0,1fr)_232px]">
       {/* Zone 1: photo */}
       <div className="relative aspect-[4/3] overflow-hidden bg-surface md:col-start-1 md:row-span-2 md:row-start-1 md:m-2.5 md:aspect-auto md:h-[242px] md:rounded-[14px]">
         {images.length > 0 ? (
@@ -150,6 +150,7 @@ export default function AdRowCard({ ad, locale, priority = false }: { ad: AdCard
       {/* Zone 3 (bottom): contact */}
       <div className="flex gap-2 p-4 md:col-start-3 md:row-start-2 md:flex-col md:gap-2.5 md:border-s md:border-line md:px-5 md:pb-5 md:pt-0">
         <CardContact
+          adId={ad.id}
           phone={ad.phone}
           chatUrl={`${SHARE_URL}/ad/${ad.id}`}
           labels={{ showNumber: en ? "Show number" : "إظهار الرقم", chat: en ? "Chat" : "محادثة" }}

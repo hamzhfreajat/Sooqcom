@@ -53,6 +53,7 @@ export default function AdCardView({ ad, locale, layout = "grid", priority = fal
 
   return (
     <article
+      data-ad-id={ad.id}
       className={`group overflow-hidden rounded-2xl border border-line bg-white transition hover:border-brand-200 hover:shadow-lift ${
         row ? "md:grid md:h-[292px] md:grid-cols-[320px_minmax(0,1fr)]" : "flex h-full flex-col"
       }`}
@@ -153,6 +154,7 @@ export default function AdCardView({ ad, locale, layout = "grid", priority = fal
         </p>
         <div className="mt-3 flex gap-2 border-t border-line pt-3">
           <CardContact
+            adId={ad.id}
             phone={ad.phone}
             chatUrl={`${SHARE_URL}/ad/${ad.id}`}
             labels={{ showNumber: locale === "en" ? "Show number" : "إظهار الرقم", chat: locale === "en" ? "Chat" : "محادثة" }}

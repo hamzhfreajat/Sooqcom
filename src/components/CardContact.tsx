@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { trackAd } from "@/lib/track";
 import Icon from "./Icon";
 
 interface Props {
+  adId: number;
   phone: string | null;
   /** Where the chat button leads */
   chatUrl: string;
@@ -16,7 +18,7 @@ interface Props {
  * The card's two contact options: the phone number, shown only after a tap,
  * and chat with the advertiser.
  */
-export default function CardContact({ phone, chatUrl, labels, sideBySide = false }: Props) {
+export default function CardContact({ adId, phone, chatUrl, labels, sideBySide = false }: Props) {
   const [revealed, setRevealed] = useState(false);
   const digits = (phone ?? "").replace(/[^\d+]/g, "");
   const hasPhone = digits.replace(/\D/g, "").length >= 9;
@@ -32,7 +34,14 @@ export default function CardContact({ phone, chatUrl, labels, sideBySide = false
             <span dir="ltr" className="truncate tracking-wide">{phone}</span>
           </a>
         ) : (
-          <button type="button" onClick={() => setRevealed(true)} className={primary}>
+          <button
+            type="button"
+            onClick={() => {
+              setRevealed(true);
+              trackAd(adId, "phone");
+            }}
+            className={primary}
+          >
             <Icon name="phone" size={17} className="shrink-0" />
             <span className="truncate">{labels.showNumber}</span>
           </button>
@@ -40,6 +49,7 @@ export default function CardContact({ phone, chatUrl, labels, sideBySide = false
       <a
         href={chatUrl}
         rel="nofollow"
+        onClick={() => trackAd(adId, "chat")}
         className={`inline-flex ${size} min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-brand-200 bg-white px-3 text-sm font-bold text-brand-700 transition hover:border-brand-600 hover:bg-brand-50`}
       >
         <Icon name="chat" size={18} className="shrink-0" />
