@@ -31,11 +31,12 @@ export default function SiteShell({ locale, children }: { locale: Locale; childr
         <Footer locale={locale} />
         {/* Counts the ads seen in lists, as the app does */}
         <AdImpressions />
-        {/* Loaded after the page is usable, and only when a measurement id is configured */}
+        {/* Loaded once the page has finished loading and the phone is idle, and only when a measurement
+            id is configured: started earlier, it held up a visitor's first tap by over a second on a phone */}
         {GA_MEASUREMENT_IDS.length > 0 && (
           <>
-            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`} strategy="afterInteractive" />
-            <Script id="ga" strategy="afterInteractive">
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`} strategy="lazyOnload" />
+            <Script id="ga" strategy="lazyOnload">
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());${GA_MEASUREMENT_IDS.map((id) => `gtag('config','${id}');`).join("")}`}
             </Script>
           </>
