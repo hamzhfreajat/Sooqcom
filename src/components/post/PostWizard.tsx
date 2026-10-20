@@ -16,6 +16,7 @@ import {
   shownName,
 } from "@/lib/post/schema";
 import { type SessionUser, fetchSession, onSessionChange, requestLogin } from "../AccountButton";
+import { gaEvent } from "@/lib/analytics";
 import Icon from "../Icon";
 import { AreaStep, CategoryStep, CityStep } from "./ChoiceSteps";
 import DetailsStep from "./DetailsStep";
@@ -65,6 +66,15 @@ export default function PostWizard({ lang, categories, cities, areas, adPrefix, 
   const online = !!user;
   const update = useCallback((changes: Partial<WizardState>) => setState((current) => ({ ...current, ...changes })), []);
   const notice = useCallback((message: string) => setToast(message), []);
+
+  // The first step forward counts as starting an ad (opening the page alone does not)
+  const started = useRef(false);
+  useEffect(() => {
+    if (step > PHOTOS && !started.current) {
+      started.current = true;
+      gaEvent("post_start");
+    }
+  }, [step]);
 
   useEffect(() => {
     fetchSession().then(setUser);
@@ -201,7 +211,10 @@ export default function PostWizard({ lang, categories, cities, areas, adPrefix, 
       if (!response.ok || typeof data.id !== "number") {
         const reason = typeof data.error === "string" && data.error !== "incomplete" && data.error !== "failed" ? data.error : T("تعذّر نشر الإعلان. حاول مرة أخرى.", "The ad could not be published. Please try again.");
         notice(`${T("حدث خطأ", "Error")}: ${reason}`);
-      } else setDone({ id: data.id });
+      } else {
+        gaEvent("post_published", { ad_id: data.id });
+        setDone({ id: data.id });
+      }
     } catch {
       notice(T("تعذّر الاتصال بالخادم. حاول مرة أخرى.", "Could not reach the server. Please try again."));
     }

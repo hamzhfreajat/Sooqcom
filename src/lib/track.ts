@@ -7,6 +7,8 @@
  * goes out when the visitor leaves the page (a tap on "tel:" or WhatsApp does exactly that).
  * Each ad and action is sent once a day per browser, so reloading a page counts once.
  */
+import { type KeyEvent, gaEvent } from "./analytics";
+
 const API = (process.env.NEXT_PUBLIC_API_URL || "https://api.sooq-com.com/api").replace(/\/$/, "");
 const STORE_KEY = "sooq:ad-events";
 const DAY = 86_400_000;
@@ -49,7 +51,12 @@ function remember(keys: string[]): void {
   }
 }
 
+// Contacts also go to Google Analytics, as key events: every click, not once a day
+const KEY_EVENTS: Partial<Record<AdEvent, KeyEvent>> = { phone: "phone_reveal", whatsapp: "whatsapp_click", chat: "chat_click" };
+
 export function trackAd(adId: number, event: AdEvent): void {
+  const keyEvent = KEY_EVENTS[event];
+  if (keyEvent) gaEvent(keyEvent, { ad_id: adId });
   if (!canSend()) return;
   const key = `${adId}:${event}`;
   if (!fresh([key]).length) return;

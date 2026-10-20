@@ -36,7 +36,8 @@ export default function SiteShell({ locale, children }: { locale: Locale; childr
         {GA_MEASUREMENT_IDS.length > 0 && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_IDS[0]}`} strategy="lazyOnload" />
-            <Script id="ga" strategy="lazyOnload">
+            {/* The setup only queues commands, so it runs early: events from a first tap are kept */}
+            <Script id="ga" strategy="afterInteractive">
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());${GA_MEASUREMENT_IDS.map((id) => `gtag('config','${id}');`).join("")}`}
             </Script>
           </>
