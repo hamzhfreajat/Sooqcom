@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { type SessionUser, fetchSession, onSessionChange, requestLogin } from "@/components/AccountButton";
 import Icon from "@/components/Icon";
+import { adsCountAr } from "@/lib/arabic";
 
 interface Summary {
   totalAds: number; activeAds: number; expiredAds: number; pendingAds: number; soldAds: number; pausedAds: number; boostedAds: number;
@@ -25,13 +26,13 @@ const TEXT = {
     favorites: "المفضلة", perAd: "لكل إعلان", status: { All: "الكل", Active: "نشط", Uncompleted: "غير مكتمل", Expired: "منتهية", Sold: "مباعة", Paused: "متوقفة", Rejected: "مرفوض" } as Record<string, string>,
     search: "ابحث في إعلاناتك...", empty: "لم تقم بنشر أي إعلانات بعد. ابدأ الآن!", emptyFilter: "لا توجد إعلانات بهذه الحالة.", view: "عرض", pause: "إيقاف", resume: "تفعيل", sold: "تم البيع",
     republish: "إعادة النشر", republishAll: "إعادة نشر الكل", confirmRepublishAll: "سيتم رفع جميع إعلاناتك النشطة إلى أعلى القائمة. هل تريد المتابعة؟",
-    republishedAll: (n: number, waiting: number) => `تمت إعادة نشر ${n} إعلان${waiting ? `، و${waiting} أُعيد نشرها خلال آخر 24 ساعة` : ""}`,
+    republishedAll: (n: number, waiting: number) => `تمت إعادة نشر ${adsCountAr(n)}${waiting ? `، و${waiting} أُعيد نشرها خلال آخر 24 ساعة` : ""}`,
     republishAllWait: "جميع إعلاناتك أُعيد نشرها خلال آخر 24 ساعة. حاول لاحقاً.", remove: "حذف", confirmDelete: "هل تريد حذف هذا الإعلان نهائياً؟", done: "تم تنفيذ العملية بنجاح", failed: "حدث خطأ أثناء التنفيذ",
     already: "هذا الإعلان تم إعادة نشره بالفعل وهو الآن في أعلى القائمة", published: "تاريخ النشر", score: "قوة الإعلان", top: "الأكثر مشاهدة", loginTitle: "سجّل الدخول لعرض إعلاناتك",
     loginBody: "حسابك على الموقع هو نفسه حسابك في التطبيق.", login: "تسجيل الدخول", currency: "د.أ", photos: "صور", reviews: "تقييم", selected: (n: number) => `تم تحديد ${n}`,
     hints: { "Price might be slightly high.": "قد يكون السعر مرتفعاً قليلاً.", "Add more photos to increase trust.": "أضف صوراً أكثر لزيادة الثقة." } as Record<string, string>,
-    tipNone: "أضف إعلانك الأول للبدء بمتابعة التفاعل.", tipInactive: "ليس لديك إعلانات نشطة. قم بالتجديد الآن!", tipExpired: (n: number) => `${n} إعلانات منتهية. جددها اليوم.`,
-    tipPending: (n: number) => `${n} إعلانات غير مكتملة.`, tipGood: "أداء حسابك ممتاز. استمر في نشر المزيد من الإعلانات!", appOnly: "تعديل الإعلان وترويجه متاحان حالياً من التطبيق.",
+    tipNone: "أضف إعلانك الأول للبدء بمتابعة التفاعل.", tipInactive: "ليس لديك إعلانات نشطة. قم بالتجديد الآن!", tipExpired: (n: number) => `${adsCountAr(n)} منتهية. جددها اليوم.`,
+    tipPending: (n: number) => `${adsCountAr(n)} غير مكتملة.`, tipGood: "أداء حسابك ممتاز. استمر في نشر المزيد من الإعلانات!", appOnly: "تعديل الإعلان وترويجه متاحان حالياً من التطبيق.",
   },
   en: {
     title: "My ads", subtitle: "Follow how your ads perform and manage them in one place.", post: "Post an ad", stats: "Performance", ads: "Ads", views: "Views", chats: "Chats",

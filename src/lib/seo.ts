@@ -12,6 +12,7 @@ import {
   SITE_URL,
   SUPPORT_EMAIL,
 } from "./config";
+import { adsCountAr } from "./arabic";
 import { formatNumber, formatPrice, plainText, shortPrice } from "./format";
 import { dict } from "./i18n";
 import {
@@ -111,9 +112,9 @@ export function listingTitle(locale: Locale, heading: string, total: number, fro
   if (from) {
     return locale === "en"
       ? `${heading} - ${formatNumber(total)} Listings from ${shortPrice(from, "en")}`
-      : `${heading} - ${formatNumber(total)} إعلان من ${shortPrice(from, "ar")}`;
+      : `${heading} - ${adsCountAr(total)} من ${shortPrice(from, "ar")}`;
   }
-  return locale === "en" ? `${heading} - ${formatNumber(total)} Listings with Prices` : `${heading} - ${formatNumber(total)} إعلان بالصور والأسعار`;
+  return locale === "en" ? `${heading} - ${formatNumber(total)} Listings with Prices` : `${heading} - ${adsCountAr(total)} بالصور والأسعار`;
 }
 
 /**
@@ -150,7 +151,7 @@ export function listingDescription(locale: Locale, params: ListingParams, landin
   const price = hasStats
     ? ` السعر الوسيط ${formatPrice(stats!.median, "ar")}${params.deal === "rent" ? " شهرياً" : ""} والنطاق الشائع ${formatNumber(stats!.low!)}–${formatNumber(stats!.high!)}.`
     : "";
-  return `${formatNumber(landing.total)} إعلان ${heading} بالصور والأسعار.${price} إعلانات محدّثة يومياً على سوقكم.${suffix}`;
+  return `${adsCountAr(landing.total)} ${heading} بالصور والأسعار.${price} إعلانات محدّثة يومياً على سوقكم.${suffix}`;
 }
 
 /** The home page is "https://site/" in every tag, so the canonical, the sitemap and the links agree. */
@@ -455,12 +456,12 @@ export function listingFaqs(locale: Locale, params: ListingParams, landing: Land
 
   faqs.push({
     question: `كم عدد إعلانات ${heading} المتاحة؟`,
-    answer: `يوجد حالياً ${formatNumber(landing.total)} إعلان على سوقكم، جميعها بالصور والسعر، وتُضاف إعلانات جديدة يومياً.`,
+    answer: `يوجد حالياً ${adsCountAr(landing.total)} على سوقكم، جميعها بالصور والسعر، وتُضاف إعلانات جديدة يومياً.`,
   });
   if (stats && stats.count >= 5 && stats.median != null) {
     faqs.push({
       question: `كم سعر ${heading}؟`,
-      answer: `السعر الوسيط ${formatPrice(stats.median, "ar")}${perMonth ? " شهرياً" : ""}، ومعظم الإعلانات بين ${formatPrice(stats.low, "ar")} و${formatPrice(stats.high, "ar")}، بناءً على ${formatNumber(stats.count)} إعلان.`,
+      answer: `السعر الوسيط ${formatPrice(stats.median, "ar")}${perMonth ? " شهرياً" : ""}، ومعظم الإعلانات بين ${formatPrice(stats.low, "ar")} و${formatPrice(stats.high, "ar")}، بناءً على ${adsCountAr(stats.count)}.`,
     });
   }
   if (landing.locations.length >= 3) {
@@ -494,14 +495,14 @@ function detailFaqs(locale: Locale, params: ListingParams, landing: Landing) {
     faqs.push(
       en
         ? { question: `Are the ${type.toLowerCase()} furnished or unfurnished?`, answer: `${formatNumber(counts.furnished)} listings are furnished and ${formatNumber(counts.unfurnished ?? 0)} are unfurnished. The rest do not say.` }
-        : { question: `هل إعلانات ${type} هنا مفروشة أم فارغة؟`, answer: `${formatNumber(counts.furnished)} إعلان مفروش و${formatNumber(counts.unfurnished ?? 0)} إعلان فارغ، وباقي الإعلانات لم تذكر ذلك.` },
+        : { question: `هل إعلانات ${type} هنا مفروشة أم فارغة؟`, answer: `${adsCountAr(counts.furnished)} لعقارات مفروشة و${adsCountAr(counts.unfurnished ?? 0)} لعقارات فارغة، وباقي الإعلانات لم تذكر ذلك.` },
     );
   }
   if (counts && (counts.owner ?? 0) >= 3) {
     faqs.push(
       en
         ? { question: `Are there listings placed directly by the owner?`, answer: `Yes. ${formatNumber(counts.owner ?? 0)} listings say they are offered by the owner with no agent.` }
-        : { question: `هل توجد إعلانات من المالك مباشرة؟`, answer: `نعم، ${formatNumber(counts.owner ?? 0)} إعلان يذكر أنه من المالك مباشرة دون وسيط.` },
+        : { question: `هل توجد إعلانات من المالك مباشرة؟`, answer: `نعم، ${adsCountAr(counts.owner ?? 0)} من المالك مباشرة دون وسيط.` },
     );
   }
   return faqs;

@@ -1,3 +1,4 @@
+import { adsCountAr } from "./arabic";
 import type { Locale } from "./types";
 
 const ar = {
@@ -24,7 +25,7 @@ const ar = {
   unfurnished: "غير مفروشة",
   studio: "ستوديو",
   photos: "صور",
-  ads_count: (n: number) => `${n.toLocaleString("en-US")} إعلان`,
+  ads_count: (n: number) => adsCountAr(n),
   results_in: "إعلان متاح",
   sort: "الترتيب",
   sort_newest: "الأحدث",
@@ -42,7 +43,7 @@ const ar = {
   market_title: "نظرة على الأسعار",
   market_median: "السعر الوسيط",
   market_range: "النطاق الشائع",
-  market_based_on: (n: number) => `بناءً على ${n.toLocaleString("en-US")} إعلان`,
+  market_based_on: (n: number) => `بناءً على ${adsCountAr(n)}`,
   market_monthly_note: "الأسعار شهرية تقريبية؛ الإيجارات السنوية محوّلة إلى شهرية.",
   below_market: (p: number) => `أقل من وسيط المنطقة بـ ${p}%`,
   above_market: (p: number) => `أعلى من وسيط المنطقة بـ ${p}%`,

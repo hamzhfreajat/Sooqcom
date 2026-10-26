@@ -5,6 +5,7 @@ import AppBand from "@/components/AppBand";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
 import Faq from "@/components/Faq";
 import { ApiNotFound, getLanding, getPrices, getTaxonomy } from "@/lib/api";
+import { adsCountAr } from "@/lib/arabic";
 import { formatNumber, formatPrice } from "@/lib/format";
 import { dict } from "@/lib/i18n";
 import { listingHeading, pageMetadata, pricesHeading } from "@/lib/seo";
@@ -57,7 +58,7 @@ function summary(locale: Locale, params: PricesParams, guide: PriceGuide): strin
       ? `${lead} The lowest median is in ${placeName(cheapest, "en")} (${formatPrice(cheapest.median, "en")}) and the highest in ${placeName(dearest, "en")} (${formatPrice(dearest.median, "en")}).`
       : lead;
   }
-  const lead = `السعر الوسيط ${money(stats.median, params, "ar")}، ومعظم الإعلانات بين ${formatNumber(stats.low ?? 0)} و${formatNumber(stats.high ?? 0)}، بناءً على ${formatNumber(stats.count)} إعلان على سوقكم.`;
+  const lead = `السعر الوسيط ${money(stats.median, params, "ar")}، ومعظم الإعلانات بين ${formatNumber(stats.low ?? 0)} و${formatNumber(stats.high ?? 0)}، بناءً على ${adsCountAr(stats.count)} على سوقكم.`;
   return spread
     ? `${lead} أقل سعر وسيط في ${cheapest.name_ar} (${formatPrice(cheapest.median, "ar")}) وأعلى سعر وسيط في ${dearest.name_ar} (${formatPrice(dearest.median, "ar")}).`
     : lead;
@@ -137,7 +138,7 @@ export default async function PricesView({ locale, params }: { locale: Locale; p
   faqs.push(
     en
       ? { question: "Where do these prices come from?", answer: `They are computed from the asking prices of the ${formatNumber(stats.count)} listings currently on Sooqcom for this kind of property. They are asking prices, not registered contract prices, and they change as listings are added and removed.` }
-      : { question: "من أين تأتي هذه الأسعار؟", answer: `محسوبة من الأسعار المطلوبة في ${formatNumber(stats.count)} إعلان معروض حالياً على سوقكم لهذا النوع من العقار. هي أسعار مطلوبة في الإعلانات وليست أسعار عقود موثّقة، وتتغير مع إضافة الإعلانات وإزالتها.` },
+      : { question: "من أين تأتي هذه الأسعار؟", answer: `محسوبة من الأسعار المطلوبة في ${adsCountAr(stats.count)} معروضة حالياً على سوقكم لهذا النوع من العقار. هي أسعار مطلوبة في الإعلانات وليست أسعار عقود موثّقة، وتتغير مع إضافة الإعلانات وإزالتها.` },
   );
   faqs.push(
     en
