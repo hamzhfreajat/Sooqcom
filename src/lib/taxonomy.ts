@@ -339,6 +339,75 @@ export function resolvePrices(locale: Locale, segments: string[], taxonomy: Taxo
   return city ? { deal, type, city } : null;
 }
 
+// ---------------------------------------------------------------------------
+// Misspelled addresses: "/للايجار/...", "/إعلان/...", "/للبیع/..." (Persian ی), "/أسعار/..."
+// People type, paste and share addresses without the hamza or with another keyboard's
+// letters, and translation tools turn "اعلان" into "anuncio". Such an address is
+// matched letter-insensitively against the real ones and sent there for good.
+// ---------------------------------------------------------------------------
+export function looseSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[ً-ٰٟـ]/g, "") // vowel marks and tatweel
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/[یى]/g, "ي")
+    .replace(/ک/g, "ك")
+    .replace(/ة/g, "ه")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+/** What a translated "اعلان" turns into */
+const AD_ALIASES = ["anuncio", "annonce", "anzeige", "ilan", "advertisement", "listing"];
+
+const looseCache = new WeakMap<Taxonomy, Record<Locale, Map<string, string | null>>>();
+
+/** Loose spelling → real segment, for every word an address can hold. null marks two real words that read the same. */
+function looseIndex(taxonomy: Taxonomy) {
+  let cached = looseCache.get(taxonomy);
+  if (cached) return cached;
+  cached = { ar: new Map(), en: new Map() };
+  for (const locale of LOCALES) {
+    const map = cached[locale];
+    const add = (slug: string) => {
+      const key = looseSlug(slug);
+      const known = map.get(key);
+      if (known === undefined) map.set(key, slug);
+      else if (known !== slug) map.set(key, null);
+    };
+    for (const deal of Object.values(DEALS)) add(deal.slug[locale]);
+    for (const type of PROPERTY_TYPES) add(type.slug[locale]);
+    for (const city of taxonomy.cities) add(placeSlug(city, locale));
+    for (const region of taxonomy.regions) add(placeSlug(region, locale));
+    add(FURNISHED_SLUG[locale]);
+    for (const period of Object.values(RENT_PERIODS)) add(period.slug[locale]);
+    for (const feature of Object.values(FEATURES)) add(feature.slug[locale]);
+    for (const deal of Object.keys(PRICE_CAPS) as Deal[]) for (const cap of PRICE_CAPS[deal]) add(capSlug(locale, deal, cap));
+    for (let n = 1; n <= 6; n++) add(`${n}-${BEDROOM_SUFFIX[locale]}`);
+    add(PRICES_SEGMENT[locale]);
+    add(AD_SEGMENT[locale]);
+  }
+  looseCache.set(taxonomy, cached);
+  return cached;
+}
+
+/**
+ * The address a misspelled one was meant to be, as segments, or null when it is already
+ * right or matches nothing. Ad addresses keep everything after the ad segment as it is.
+ */
+export function correctedSegments(locale: Locale, segments: string[], taxonomy: Taxonomy): string[] | null {
+  if (!segments.length) return null;
+  const first = looseSlug(segments[0]);
+  if (first === looseSlug(AD_SEGMENT[locale]) || AD_ALIASES.includes(first)) {
+    return segments[0] === AD_SEGMENT[locale] || segments.length !== 2 ? null : [AD_SEGMENT[locale], segments[1]];
+  }
+  const map = looseIndex(taxonomy)[locale];
+  const fixed = segments.map((segment) => map.get(looseSlug(segment)) ?? segment);
+  if (fixed.every((segment, i) => segment === segments[i])) return null;
+  return resolvePrices(locale, fixed, taxonomy) || resolveListing(locale, fixed, taxonomy) ? fixed : null;
+}
+
 export function adPath(locale: Locale, ad: { id: number; slug?: string }): string {
   const tail = ad.slug ? `${ad.id}-${ad.slug}` : `${ad.id}`;
   return `${locale === "en" ? "/en" : ""}/${AD_SEGMENT[locale]}/${tail}`;

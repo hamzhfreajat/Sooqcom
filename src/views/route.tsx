@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { ApiNotFound, getAd, getTaxonomy } from "@/lib/api";
-import { AD_SEGMENT, type ListingParams, type PricesParams, adPath, resolveListing, resolvePrices } from "@/lib/taxonomy";
+import { AD_SEGMENT, type ListingParams, type PricesParams, adPath, correctedSegments, resolveListing, resolvePrices } from "@/lib/taxonomy";
 import type { AdDetail, Locale } from "@/lib/types";
 import AdView, { adMetadata } from "./AdView";
 import ListingView, { type SearchParams, listingMetadata } from "./ListingView";
@@ -12,6 +12,7 @@ type Resolved =
   | { kind: "ad"; ad: AdDetail; requested: string }
   | { kind: "listing"; params: ListingParams }
   | { kind: "prices"; params: PricesParams }
+  | { kind: "redirect"; path: string }
   | null;
 
 function decode(segment: string): string {
@@ -41,7 +42,10 @@ const resolve = cache(async (locale: Locale, joined: string): Promise<Resolved> 
   const prices = resolvePrices(locale, segments, taxonomy);
   if (prices) return { kind: "prices", params: prices };
   const params = resolveListing(locale, segments, taxonomy);
-  return params ? { kind: "listing", params } : null;
+  if (params) return { kind: "listing", params };
+  // A misspelled address ("للايجار", "إعلان", "للبیع") goes to the page it was meant to be
+  const fixed = correctedSegments(locale, segments, taxonomy);
+  return fixed ? { kind: "redirect", path: `${locale === "en" ? "/en" : ""}/${fixed.join("/")}` } : null;
 });
 
 interface RouteProps {
@@ -53,7 +57,7 @@ interface RouteProps {
 export function makeRoute(locale: Locale) {
   async function generateMetadata({ params, searchParams }: RouteProps): Promise<Metadata> {
     const resolved = await resolve(locale, (await params).path.join("/"));
-    if (!resolved) return { robots: { index: false, follow: false } };
+    if (!resolved || resolved.kind === "redirect") return { robots: { index: false, follow: false } };
     if (resolved.kind === "ad") return adMetadata(locale, resolved.ad);
     if (resolved.kind === "prices") {
       // A guide with no ads behind it is a missing page, not an error
@@ -65,6 +69,14 @@ export function makeRoute(locale: Locale) {
   async function Page({ params, searchParams }: RouteProps) {
     const resolved = await resolve(locale, (await params).path.join("/"));
     if (!resolved) notFound();
+    if (resolved.kind === "redirect") {
+      const query = new URLSearchParams();
+      for (const [key, value] of Object.entries(await searchParams)) {
+        for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) query.append(key, item);
+      }
+      const search = query.toString();
+      permanentRedirect(encodeURI(resolved.path) + (search ? `?${search}` : ""));
+    }
 
     if (resolved.kind === "ad") {
       // One address per ad: an old or partial slug is redirected to the current one
