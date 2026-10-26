@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import AdRowCard from "@/components/AdRowCard";
 import AppBand from "@/components/AppBand";
 import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs";
@@ -67,7 +68,14 @@ function pageFilters(locale: Locale, params: ListingParams, query: ListingQuery,
   return { options, value, categoryId: cat ?? base, deeper };
 }
 
-function loadLanding(params: ListingParams, query: ListingQuery, filters: ReturnType<typeof pageFilters>) {
+/** The page's ads. A page number past the last page is a 404: an empty list answered with 200 is a "soft 404" for Google. */
+async function loadLanding(params: ListingParams, query: ListingQuery, filters: ReturnType<typeof pageFilters>) {
+  const landing = await fetchLanding(params, query, filters);
+  if (query.page > 1 && query.page > Math.ceil(landing.total / PAGE_SIZE)) notFound();
+  return landing;
+}
+
+function fetchLanding(params: ListingParams, query: ListingQuery, filters: ReturnType<typeof pageFilters>) {
   const { value } = filters;
   const severalRegions = (value.regionIds?.length ?? 0) > 1;
   return getLanding({
