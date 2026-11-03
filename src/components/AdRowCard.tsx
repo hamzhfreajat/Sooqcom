@@ -62,6 +62,7 @@ export default function AdRowCard({ ad, locale, priority = false }: { ad: AdCard
         )}
         <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">
+            {ad.ended && <span className="rounded-md bg-ink/80 px-2 py-1 text-xs font-bold text-white">{t.ended_badge}</span>}
             {ad.is_featured && (
               <span className="inline-flex items-center gap-1 rounded-md bg-star px-2 py-1 text-xs font-bold text-ink">
                 <Icon name="star" size={12} fill="currentColor" />
@@ -149,12 +150,19 @@ export default function AdRowCard({ ad, locale, priority = false }: { ad: AdCard
 
       {/* Zone 3 (bottom): contact */}
       <div className="flex gap-2 p-4 md:col-start-3 md:row-start-2 md:flex-col md:gap-2.5 md:border-s md:border-line md:px-5 md:pb-5 md:pt-0">
-        <CardContact
-          adId={ad.id}
-          phone={ad.phone}
-          chatUrl={`${SHARE_URL}/ad/${ad.id}`}
-          labels={{ showNumber: en ? "Show number" : "إظهار الرقم", chat: en ? "Chat" : "محادثة" }}
-        />
+        {ad.ended ? (
+          <p className="flex items-center gap-2 text-sm font-semibold text-muted">
+            <Icon name="alert" size={16} className="shrink-0" />
+            {t.ended_contact}
+          </p>
+        ) : (
+          <CardContact
+            adId={ad.id}
+            phone={ad.phone}
+            chatUrl={`${SHARE_URL}/ad/${ad.id}`}
+            labels={{ showNumber: en ? "Show number" : "إظهار الرقم", chat: en ? "Chat" : "محادثة" }}
+          />
+        )}
       </div>
     </article>
   );

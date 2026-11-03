@@ -80,7 +80,8 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
     .filter(([key]) => DETAIL_LABELS[key])
     .map(([key, value]) => ({ label: DETAIL_LABELS[key][locale], value: Array.isArray(value) ? value.join("، ") : String(value) }));
 
-  if (!ad.live) {
+  // A recently ended scraped ad keeps its full page, with no way to contact anyone
+  if (!ad.live && !ad.ended) {
     return (
       <div className="container-page py-6">
         <Breadcrumbs items={crumbs.slice(0, -1)} label={t.home} />
@@ -97,8 +98,14 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
 
   return (
     <div className="container-page py-6">
-      <AdSeen adId={ad.id} />
+      {ad.live && <AdSeen adId={ad.id} />}
       <Breadcrumbs items={crumbs} label={t.home} />
+      {ad.ended && (
+        <p className="mt-4 flex items-start gap-2.5 rounded-2xl border border-line bg-surface px-5 py-3.5 text-sm leading-6 text-body">
+          <Icon name="alert" size={18} className="mt-0.5 shrink-0 text-muted" />
+          {t.ended_page_note}
+        </p>
+      )}
 
       <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
@@ -115,7 +122,10 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
           />
 
           <header className="mt-6">
-            <h1 className="text-2xl font-black leading-snug sm:text-[28px]">{ad.title}</h1>
+            <h1 className="text-2xl font-black leading-snug sm:text-[28px]">
+              {ad.ended && <span className="me-2 inline-block rounded-md bg-ink/80 px-2 py-0.5 align-middle text-sm font-bold text-white">{t.ended_badge}</span>}
+              {ad.title}
+            </h1>
             {location && (
               <p className="mt-2 flex items-center gap-1.5 text-muted">
                 <Icon name="pin" size={18} />
@@ -196,12 +206,22 @@ export default async function AdView({ locale, ad }: { locale: Locale; ad: AdDet
               </p>
             )}
             <hr className="my-5 border-line" />
-            <ContactBox
-              adId={ad.id}
-              phone={ad.phone}
-              appUrl={`${SHARE_URL}/ad/${ad.id}`}
-              labels={{ title: t.contact_title, showNumber: t.show_number, whatsapp: t.whatsapp, openInApp: t.open_in_app }}
-            />
+            {ad.ended ? (
+              <div className="text-sm leading-6 text-muted">
+                <p className="flex items-center gap-2 font-semibold">
+                  <Icon name="alert" size={16} className="shrink-0" />
+                  {t.ended_contact}
+                </p>
+                <Link href={parentPath} className="btn-primary mt-4 w-full">{t.browse_similar}</Link>
+              </div>
+            ) : (
+              <ContactBox
+                adId={ad.id}
+                phone={ad.phone}
+                appUrl={`${SHARE_URL}/ad/${ad.id}`}
+                labels={{ title: t.contact_title, showNumber: t.show_number, whatsapp: t.whatsapp, openInApp: t.open_in_app }}
+              />
+            )}
             {ad.owner_name && (
               <p className="mt-4 text-sm text-muted">
                 {t.advertiser}: <span className="font-bold text-ink">{ad.owner_name}</span>

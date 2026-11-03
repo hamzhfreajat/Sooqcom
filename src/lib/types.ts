@@ -21,6 +21,8 @@ export interface Taxonomy {
 
 export interface AdCard {
   id: number;
+  /** A scraped ad past its 5 days: still shown on the website, with no way to contact anyone */
+  ended?: boolean;
   title: string;
   /** The title for search results: names the deal and the place when the ad's own title does not */
   seo_title?: string;
@@ -70,7 +72,11 @@ export interface PlaceCount extends City {
 }
 
 export interface Landing {
+  /** Live ads only: the list and its pages */
   total: number;
+  /** Recently ended ads in the same scope, shown under the live ones on the first page */
+  ended_total?: number;
+  ended_ads?: AdCard[];
   page: number;
   page_size: number;
   ads: AdCard[];
@@ -95,6 +101,8 @@ export interface AdDetail extends AdCard {
   images: string[];
   description: string;
   live: boolean;
+  /** Not live, but a recently ended scraped ad: shown in full, without contact details */
+  ended?: boolean;
   indexable: boolean;
   updated_at: string | null;
   location: string | null;

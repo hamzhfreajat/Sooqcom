@@ -120,17 +120,19 @@ export async function listingMetadata(locale: Locale, params: ListingParams, sea
   const landing = await loadLanding(params, query, filters);
   const leaf = filters.deeper ? landing.breadcrumb[landing.breadcrumb.length - 1] : undefined;
   const heading = leaf ? categoryHeading(locale, params, filters.options.categories.find((c) => c.id === leaf.id)?.name ?? leaf.name) : listingHeading(locale, params);
-  const indexable = landing.total >= MIN_ADS_TO_INDEX && !isRefined(query) && (locale === "ar" || englishIndexable(params));
+  // Recently ended ads are on the page too, so they count toward keeping it indexed
+  const shownTotal = landing.total + (landing.ended_total ?? 0);
+  const indexable = shownTotal >= MIN_ADS_TO_INDEX && !isRefined(query) && (locale === "ar" || englishIndexable(params));
   const title =
     query.page > 1
       ? `${heading} - ${dict(locale).page_of(query.page, Math.max(1, Math.ceil(landing.total / PAGE_SIZE)))}`
       : leaf
         ? heading
-        : listingTitle(locale, heading, landing.total, hasComparablePrices(params, landing) ? typicalRange(landing.stats)?.low : null);
+        : listingTitle(locale, heading, shownTotal, hasComparablePrices(params, landing) ? typicalRange(landing.stats)?.low : null);
   return pageMetadata({
     locale,
     title,
-    description: listingDescription(locale, params, landing, query.page),
+    description: listingDescription(locale, params, { ...landing, total: query.page > 1 ? landing.total : shownTotal }, query.page),
     arPath: listingPath("ar", params),
     enPath: englishIndexable(params) ? listingPath("en", params) : null,
     query: query.page > 1 ? `?page=${query.page}` : "",
@@ -238,6 +240,7 @@ export default async function ListingView({
   }
 
   const refined = isRefined(query);
+  const endedAds = query.page === 1 ? landing.ended_ads ?? [] : [];
   const faqs = query.page === 1 && !refined ? listingFaqs(locale, params, landing) : [];
   const placeScope = params.city ? placeName(params.city, locale) : t.jordan;
 
@@ -340,6 +343,11 @@ export default async function ListingView({
                   </div>
                   <Pagination locale={locale} page={query.page} totalPages={totalPages} hrefFor={pageHref} />
                 </>
+              ) : endedAds.length > 0 ? (
+                <div className="rounded-2xl border border-line bg-white px-6 py-8 text-center shadow-card">
+                  <h2 className="text-lg font-bold">{t.no_live_title}</h2>
+                  <p className="mt-2 text-sm text-muted">{t.no_live_body}</p>
+                </div>
               ) : (
                 <div className="rounded-2xl border border-line bg-white px-6 py-16 text-center shadow-card">
                   <Icon name="search" size={40} className="mx-auto text-line" />
@@ -349,6 +357,21 @@ export default async function ListingView({
                     {params.type ? `${params.type.label[locale]} ${DEALS[params.deal].label[locale]}` : dealName}
                   </Link>
                 </div>
+              )}
+
+              {endedAds.length > 0 && (
+                <section aria-labelledby="ended-title" className="space-y-4 pt-4">
+                  <div>
+                    <h2 id="ended-title" className="text-lg font-bold">
+                      {t.ended_title}
+                      <span className="ms-2 text-sm font-semibold text-muted">({formatNumber(landing.ended_total ?? endedAds.length)})</span>
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-muted">{t.ended_intro}</p>
+                  </div>
+                  {endedAds.map((ad) => (
+                    <AdRowCard key={ad.id} ad={ad} locale={locale} />
+                  ))}
+                </section>
               )}
             </div>
           </div>
